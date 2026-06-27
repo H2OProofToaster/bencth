@@ -2,12 +2,11 @@
 // Created by nick on 6/26/26.
 //
 
-#ifndef BENCCH_FILE_H
-#define BENCCH_FILE_H
+#ifndef BENCTHC_FILE_H
+#define BENCTHC_FILE_H
 
-int openFile(const char* path);
-int closeFile(int fd);
-char* readChar(int fd, int offset);
-char* readFile(const char* path);
+int b_fopen(const char* path);
+int b_fclose(int fd);
+char* b_fread(int fd);
 
-#endif //BENCCH_FILE_H
+#endif //BENCTHC_FILE_H

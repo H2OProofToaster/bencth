@@ -6,12 +6,12 @@
 
 #include <stdio.h>
 
-void print(const char *s) {
+void b_printString(const char *s) {
 
   printf("%s\n", s);
 }
 
-void printInt(long n) {
+void b_printInt(long n) {
 
   printf("%ld\n", n);
 }

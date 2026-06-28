@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include "bencthc/src/utils/allocator.h"
+
+typedef
+long unsigned int size_t;
 
 //READ-ONLY
 int b_fopen(const char* path) {
@@ -20,16 +24,30 @@ int b_fclose(const int fd) {
   return close(fd);
 }
 
-char* b_fread(const int fd) {
+int b_fstat(const int fd, struct stat* st) {
+
+  return fstat(fd, st);
+}
+
+size_t b_fsize(const int fd) {
+
+  struct stat st;
+
+  if (b_fstat(fd, &st) < 0) { return -1; }
+
+  return (size_t)st.st_size;
+}
+
+Arena* b_fread(const int fd) {
 
   struct stat st;
 
   //error while opening
-  if (fstat(fd, &st) < 0) { return NULL;}
+  if (b_fstat(fd, &st) < 0) { return NULL; }
 
   const size_t size = (size_t)st.st_size;
 
-  char* data = malloc(size + 1);
+  Arena* data = b_allocArenaSize(size + 1);
 
   for (size_t i = 0; i < size;) {
 
@@ -48,7 +66,7 @@ char* b_fread(const int fd) {
     i += n;
   }
 
-  data[size] = '\0';
+  ((char*)data->buff)[size] = '\0';
 
   return data;
 }

@@ -10,7 +10,6 @@ long unsigned int size_t;
 
 typedef struct {
 
-  void* buff;
   size_t curr;
   size_t cap;
 } Arena;

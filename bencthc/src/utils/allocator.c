@@ -8,22 +8,18 @@
 
 Arena* b_allocArena() {
 
-  Arena* a = malloc(64 * 1024 * 1024); //64MB
-
-  a->buff = a;
-  a->curr = 0;
-  a->cap = 64 * 1024 * 1024;
-
-  return a;
+  return b_allocArenaSize(64 * 1024 * 1024);
 }
 
 Arena* b_allocArenaSize(const size_t size) {
 
   Arena* a = malloc(size);
 
-  a->buff = a;
+  //check malloc fail
+  if (a == NULL) { die("malloc crash"); }
+
   a->curr = 0;
-  a->cap = size;
+  a->cap = size - sizeof(Arena);
 
   return a;
 }
@@ -33,13 +29,11 @@ void* b_alloc(Arena* a, size_t size) {
   //round size to avoid shenanigans
   size = (size + 7) & ~7;
 
-  //check for space
-  if (a->cap - a->curr < size) {
+  //check for overflow
+  if (a->cap < a->curr + size) { die("arena overflow"); }
 
-    die("arena overflow");
-  }
-
-  void* mem = a->buff + a->curr;
+  char* base = (char*)a + sizeof(Arena);
+  void* mem = base + a->curr;
   a->curr += size;
 
   return mem;

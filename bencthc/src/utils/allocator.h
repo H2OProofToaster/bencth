@@ -17,5 +17,6 @@ typedef struct {
 Arena* b_allocArena();
 Arena* b_allocArenaSize(size_t size);
 void* b_alloc(Arena* a, size_t size);
+void b_free(Arena* a);
 
 #endif //BENCTH_ALLOCATOR_H

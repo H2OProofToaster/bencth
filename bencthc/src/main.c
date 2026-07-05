@@ -13,7 +13,7 @@
 void printToken(const Token* t) {
 
   b_printString("Token type: ");
-  b_printString((char*)t->type);
+  b_printString("n/a");
   b_printString(" Lexeme: ");
   b_printString(t->lexeme);
   b_printString(" Line: ");

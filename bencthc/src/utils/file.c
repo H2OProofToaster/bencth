@@ -51,12 +51,12 @@ Arena* b_fread(const int fd) {
 
   for (size_t i = 0; i < size;) {
 
-    const ssize_t n = read(fd, data + i, size - i);
+    const ssize_t n = read(fd, (char*)data + sizeof(Arena) + i, size - i);
 
     //error while reading
     if (n < 0) {
 
-      free(data);
+      b_free(data);
       return NULL;
     }
 
@@ -65,8 +65,6 @@ Arena* b_fread(const int fd) {
 
     i += n;
   }
-
-  ((char*)data->buff)[size] = '\0';
 
   return data;
 }

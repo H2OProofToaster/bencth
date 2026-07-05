@@ -6,6 +6,8 @@
 #include "bencthc/src/utils/exit.h"
 #include "bencthc/src/utils/print.h"
 #include "bencthc/src/scanner.h"
+
+#include "utils/memory.h"
 #include "utils/string.h"
 
 int isDigit(const char c) { return c >= '0' && c <= '9'; }
@@ -14,10 +16,14 @@ int isAlpha(const char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= '
 
 int isAlphaNumeric(const char c) { return isAlpha(c) || isDigit(c); }
 
+int isAtEnd(const Scanner* s) { return s->curr >= s->source + s->length; }
+
 //eat one char
 char* advance(Scanner* s) { return s->curr++; }
 
-char peek(const Scanner* s) { return s->curr[1]; }
+char peek(const Scanner* s) { return s->curr[0]; }
+
+char peekNext(const Scanner* s) { return s->curr[1]; }
 
 Token* addToken(Scanner* s, const enum tokenType type, char* lexeme, const int line) {
 
@@ -27,6 +33,23 @@ Token* addToken(Scanner* s, const enum tokenType type, char* lexeme, const int l
   t->line = line;
 
   return t;
+}
+
+//check if an identifier is a reserved keyword
+//first does length check (idea gratefully from calude :)
+//then uses (to be implemented) memory comparison
+enum tokenType checkKeyword(const Token* t) {
+
+  for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
+
+    if (t->length == keywords[i].length &&
+        b_memcmp(t->lexeme, keywords[i].keyword, t->length) == 0) {
+
+      return keywords[i].type;
+    }
+  }
+
+  return IDENTIFIER;
 }
 
 void advanceNumber(Scanner* s, char* c) {
@@ -45,6 +68,7 @@ void advanceNumber(Scanner* s, char* c) {
 void advanceIdentifier(Scanner* s, char* c) {
 
   Token* t = addToken(s, IDENTIFIER, c, s->line);
+  t->length = 1;
 
   while (isAlphaNumeric(peek(s))) {
 
@@ -52,7 +76,41 @@ void advanceIdentifier(Scanner* s, char* c) {
     t->length++;
   }
 
-  b_lexemeToLiteral(t);
+  //check for reserved keyword
+  t->type = checkKeyword(t);
+
+  if (t->type == IDENTIFIER) { b_lexemeToLiteral(t); }
+}
+
+void advanceString(Scanner* s, char* c) {
+
+  Token* t = addToken(s, STRING, c + 1, s->line);
+  t->length = 0;
+
+  //allocate space for literal
+  //upper bound of rest of source (ik that seems extra)
+  char* literal = b_alloc(s->a, (s->source + s->length) - s->curr + 1);
+  size_t length = 0;
+
+  while (peek(s) != '"' && !isAtEnd(s)) {
+
+    //check for splice
+    if (peek(s) == '\\' && peekNext(s) == '\n') {
+
+      advance(s); //eat backslash
+      advance(s); //eat newline
+      s->line++;
+      continue; //don't count splice in length
+    }
+
+    literal[length++] = *advance(s);
+  }
+
+  advance(s); //eat closing
+
+  literal[length] = '\0';
+  t->length = length;
+  t->literal.b_string = literal;
 }
 
 void scanToken(Scanner* s) {
@@ -72,9 +130,10 @@ void scanToken(Scanner* s) {
     case ';': t = addToken(s, SEMICOLON, c, s->line); t->literal.b_char = ';'; break;
 
     //single OR double characters
-    case '/': while (*c != '\n' && s->curr > s->source + s->length) c = advance(s); break; //only comments rn
+    case '/': while (*c != '\n' && !isAtEnd(s)) c = advance(s); break; //only comments rn
 
-    //keywords
+    //string literals
+    case '"': advanceString(s, c); break;
 
     //ignore whitespace
     case ' ':
@@ -88,7 +147,6 @@ void scanToken(Scanner* s) {
     //compile time cases
     default:
 
-      //literals
       //integers
       if (isDigit(*c)) { advanceNumber(s, c); break; }
 
@@ -110,10 +168,10 @@ Scanner* scan(const char* sourcePath) {
   //read from file
   const int f =  b_fopen(sourcePath);
   s->length = b_fsize(f);
-  s->source = (char*)b_fread(f);
+  s->source = (char*)b_fread(f) + sizeof(Arena);
 
   //allocate token space with upper bound of s->length
-  s->tokens = b_alloc(a, sizeof(Token) * s->length);
+  s->tokens = b_alloc(a, sizeof(Token) * (s->length + 1));
 
   //initialize scanning loop
   s->curr = s->source;
@@ -122,7 +180,7 @@ Scanner* scan(const char* sourcePath) {
     scanToken(s);
   }
 
-  addToken(s, EOF,"", s->line);
+  addToken(s, B_EOF, "", s->line);
 
   return s;
 }

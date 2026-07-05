@@ -38,3 +38,8 @@ void* b_alloc(Arena* a, size_t size) {
 
   return mem;
 }
+
+void b_free(Arena* a) {
+
+  free(a);
+}

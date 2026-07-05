@@ -5,6 +5,8 @@
 #ifndef BENCTH_SCANNER_H
 #define BENCTH_SCANNER_H
 
+#include "bencthc/src/utils/allocator.h"
+
 typedef
 long unsigned int size_t;
 
@@ -17,12 +19,12 @@ enum tokenType{
   //single OR double characters
 
   //literals
-  IDENTIFIER, INTEGER,
+  IDENTIFIER, INTEGER, STRING,
 
   //keywords
   RETURN, INT,
 
-  EOF
+  B_EOF,
 };
 
 typedef struct {
@@ -70,6 +72,11 @@ typedef struct {
   char* curr;
   int line;
 } Scanner;
+
+const keyword keywords[] = {
+  {"return", 6, RETURN},
+  {"int", 3, INT},
+};
 
 Scanner* scan(const char* sourcePath);
 

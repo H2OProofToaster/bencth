@@ -28,6 +28,7 @@ char peekNext(const Scanner* s) { return s->curr[1]; }
 Token* addToken(Scanner* s, const enum tokenType type, char* lexeme, const int line) {
 
   Token* t = &s->tokens[s->count++];
+  t->a = s->a;
   t->type = type;
   t->lexeme = lexeme;
   t->line = line;
@@ -106,7 +107,9 @@ void advanceString(Scanner* s, char* c) {
     literal[length++] = *advance(s);
   }
 
-  advance(s); //eat closing
+  //unterminated string
+  if (isAtEnd(s)) { die("unterminated string"); }
+  advance(s); //eat closing "
 
   literal[length] = '\0';
   t->length = length;
@@ -130,7 +133,20 @@ void scanToken(Scanner* s) {
     case ';': t = addToken(s, SEMICOLON, c, s->line); t->literal.b_char = ';'; break;
 
     //single OR double characters
-    case '/': while (*c != '\n' && !isAtEnd(s)) c = advance(s); break; //only comments rn
+
+    //only comments rn
+    case '/':
+      if (peek(s) == '/') {
+
+        while (peek(s) != '\n' && !isAtEnd(s)) { advance(s); }
+        //continue because c is now pointing at the newline
+        //just let the '\n' case handle it to increment s->line
+      }
+      else {
+
+        //division
+      }
+      break;
 
     //string literals
     case '"': advanceString(s, c); break;
@@ -164,6 +180,7 @@ Scanner* scan(const char* sourcePath) {
 
   Scanner* s = b_alloc(a, sizeof(Scanner));
   s->a = a;
+  s->line = 1;
 
   //read from file
   const int f =  b_fopen(sourcePath);

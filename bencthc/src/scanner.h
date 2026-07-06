@@ -73,7 +73,7 @@ typedef struct {
   int line;
 } Scanner;
 
-const keyword keywords[] = {
+static const keyword keywords[] = {
   {"return", 6, RETURN},
   {"int", 3, INT},
 };

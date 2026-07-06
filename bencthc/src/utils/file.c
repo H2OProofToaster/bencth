@@ -5,9 +5,12 @@
 #include "file.h"
 
 #include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+
+#include "exit.h"
 #include "bencthc/src/utils/allocator.h"
 
 typedef
@@ -47,7 +50,7 @@ Arena* b_fread(const int fd) {
 
   const size_t size = (size_t)st.st_size;
 
-  Arena* data = b_allocArenaSize(size + 1);
+  Arena* data = b_allocArenaSize(sizeof(Arena) + size + 1);
 
   for (size_t i = 0; i < size;) {
 
@@ -65,6 +68,8 @@ Arena* b_fread(const int fd) {
 
     i += n;
   }
+
+  ((char*)data + sizeof(Arena))[size] = '\0';
 
   return data;
 }

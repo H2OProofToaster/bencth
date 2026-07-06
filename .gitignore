@@ -9,6 +9,7 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 *.cmake
+CMakeLists.txt
 
 # Compiled Object files
 *.o

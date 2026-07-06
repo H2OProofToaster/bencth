@@ -1,0 +1,4 @@
+<program> ::= <function>
+<function> ::= "INTEGER" <id> "LEFT_PAREN" "RIGHT_PAREN" "LEFT_BRACE" <statement> "RIGHT_BRACE"
+<statement> ::= "RETURN" <expr> "SEMICOLON"
+<expr> ::= <int>

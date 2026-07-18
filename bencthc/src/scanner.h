@@ -7,10 +7,9 @@
 
 #include "bencthc/src/utils/allocator.h"
 
-typedef
-long unsigned int size_t;
+typedef long unsigned int size_t;
 
-enum tokenType{
+enum TokenType{
 
   //single characters
   EQUALS, PLUS, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
@@ -31,26 +30,26 @@ typedef struct {
 
   const char* keyword;
   size_t length;
-  enum tokenType type;
+  enum TokenType type;
 
-} keyword;
+} Keyword;
 
 typedef union {
 
-  size_t b_integer;
+  int b_integer;
   double b_double;
   char b_char;
   char* b_string;
 
-} literal;
+} Literal;
 
 typedef struct {
 
   Arena* a; //arena for token store
-  enum tokenType type;
+  enum TokenType type;
   char* lexeme; //pointer into source
   size_t length; //length of lexeme
-  literal literal; //value for numbers and strings/chars
+  Literal literal; //value for numbers and strings/chars
   int line;
 
 } Token;
@@ -73,11 +72,12 @@ typedef struct {
   int line;
 } Scanner;
 
-static const keyword keywords[] = {
+static const Keyword keywords[] = {
   {"return", 6, RETURN},
   {"int", 3, INT},
 };
 
 Scanner* scan(const char* sourcePath);
+void printTokens(const Scanner* s);
 
 #endif //BENCTH_SCANNER_H

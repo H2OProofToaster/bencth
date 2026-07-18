@@ -8,6 +8,8 @@
 typedef
 long unsigned int size_t;
 
+#define NULL ((void*)0)
+
 typedef struct {
 
   size_t curr;

@@ -1,11 +1,18 @@
 <program> ::= <function>
-<function> ::= "INT" "IDENTIFIER" "LEFT_PAREN" "RIGHT_PAREN" "LEFT_BRACE" <statement>* "RIGHT_BRACE"
+
+<function> ::= "INT" "IDENTIFIER" "LEFT_PAREN" "RIGHT_PAREN" "LEFT_BRACE" <statement>? <returnStatement> "RIGHT_BRACE"
+
 <statement> ::= <returnStatement> | <exprStatement> | <declarationStatement>
 <returnStatement> ::= "RETURN" <expr> "SEMICOLON"
 <exprStatement> ::= <expr> "SEMICOLON"
-<declarationStatement> ::= "INT" "IDENTIFIER" ("=" <expr>)? ";"
+<declarationStatement> ::= "INT" "IDENTIFIER" ("=" <expr>)? "SEMICOLON"
+
 <expr> ::= <assignment>
+
 <assignment> ::= "IDENTIFIER" "=" <assignment> | <addition>
+
 <addition> ::= <unary> ( "+" <unary>)*
+
 <unary> ::= "-" <unary> | <primary>
+
 <primary> ::= "INTEGER" | "IDENTIFIER" | "(" <expr> ")"

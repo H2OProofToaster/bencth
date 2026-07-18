@@ -8,6 +8,7 @@
 typedef long unsigned int size_t;
 
 void b_printString(const char *s);
+void b_printStringNoNewline(const char *s);
 void b_printInt(size_t n);
 void b_printChar(char c);
 

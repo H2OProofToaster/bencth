@@ -19,13 +19,13 @@ int isAlphaNumeric(const char c) { return isAlpha(c) || isDigit(c); }
 int isAtEnd(const Scanner* s) { return s->curr >= s->source + s->length; }
 
 //eat one char
-char* advance(Scanner* s) { return s->curr++; }
+static char* advance(Scanner* s) { return s->curr++; }
 
-char peek(const Scanner* s) { return s->curr[0]; }
+static char peek(const Scanner* s) { return s->curr[0]; }
 
 char peekNext(const Scanner* s) { return s->curr[1]; }
 
-Token* addToken(Scanner* s, const enum tokenType type, char* lexeme, const int line) {
+Token* addToken(Scanner* s, const enum TokenType type, char* lexeme, const int line) {
 
   Token* t = &s->tokens[s->count++];
   t->a = s->a;
@@ -39,7 +39,7 @@ Token* addToken(Scanner* s, const enum tokenType type, char* lexeme, const int l
 //check if an identifier is a reserved keyword
 //first does length check (idea gratefully from calude :)
 //then uses (to be implemented) memory comparison
-enum tokenType checkKeyword(const Token* t) {
+enum TokenType checkKeyword(const Token* t) {
 
   for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
 
@@ -200,4 +200,54 @@ Scanner* scan(const char* sourcePath) {
   addToken(s, B_EOF, "", s->line);
 
   return s;
+}
+
+void printLiteral(const Token* t) {
+
+  switch (t->type) {
+
+    case EQUALS: case PLUS: case LEFT_PAREN: case RIGHT_PAREN:
+    case LEFT_BRACE: case RIGHT_BRACE: case SEMICOLON:
+      b_printChar(t->literal.b_char);
+      break;
+
+    case INTEGER:
+      b_printInt(t->literal.b_integer);
+      break;
+
+    case IDENTIFIER:
+    case STRING:
+      b_printString(t->literal.b_string);
+      break;
+
+    case RETURN:
+    case INT:
+      b_printString("kms"); // no real literal, print the keyword name
+      break;
+
+    case B_EOF:
+      b_printString("EOF");
+      break;
+  }
+
+  b_printChar('\n');
+}
+
+void printToken(const Token* t) {
+
+  b_printString("Token type: ");
+  b_printString("n/a");
+  b_printString(" Literal: ");
+  printLiteral(t); //yes this is hacky, idrc tho
+  b_printString(" Line: ");
+  b_printInt(t->line);
+  b_printString("\n");
+}
+
+void printTokens(const Scanner* s) {
+
+  for (size_t count = 0; count < s->count; count++) {
+
+    printToken(s->tokens + count);
+  }
 }

@@ -6,20 +6,17 @@
 
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "exit.h"
 #include "bencthc/src/utils/allocator.h"
 
 typedef
 long unsigned int size_t;
 
-//READ-ONLY
 int b_fopen(const char* path) {
 
-  return open(path, O_RDONLY);
+  return open(path, O_RDWR | O_CREAT);
 }
 
 int b_fclose(const int fd) {
@@ -72,4 +69,9 @@ Arena* b_fread(const int fd) {
   ((char*)data + sizeof(Arena))[size] = '\0';
 
   return data;
+}
+
+int b_fwrite(const int fd, const char* data, const size_t size) {
+
+  return (int)write(fd, data, size);
 }

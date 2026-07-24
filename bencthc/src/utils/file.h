@@ -16,5 +16,6 @@ int b_fclose(int fd);
 int b_fstat(int fd, struct stat* st);
 size_t b_fsize(int fd);
 Arena* b_fread(int fd);
+int b_fwrite(int fd, const char* data, size_t size);
 
 #endif //BENCTH_FILE_H

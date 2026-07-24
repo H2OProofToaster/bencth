@@ -5,6 +5,7 @@
 #include "parser.h"
 #include "scanner.h"
 #include "utils/exit.h"
+#include "utils/string.h"
 
 //forward declarations
 Expr* parseExpr(Parser* p);
@@ -194,6 +195,9 @@ Parser* parse(const Scanner* s) {
   p->current = 0;
 
   p->program = parseProgram(p);
+
+  //check that entry is called main
+  if (b_strcmp(p->program->function->identifier, "main") != 0) { die("entry function not called main"); }
 
   return p;
 }

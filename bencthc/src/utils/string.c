@@ -34,10 +34,12 @@ int b_strcmp(const char* a, const char* b) {
 
   while (*a != '\0') {
 
-    if (*a++ != *b++) { return 0; }
+    if (*a != *b) { return 1; }
+    a++;
+    b++;
   }
 
-  return 1;
+  return 0;
 }
 
 char* b_intToString(Arena* a, int i) {
@@ -62,10 +64,10 @@ char* b_intToString(Arena* a, int i) {
     i /= 10;
   }
 
-  if (negative) { temp[i++] = '-'; }
+  if (negative) { temp[n++] = '-'; }
 
-  char* ret = b_alloc(a, i + 1);
-  for (int j = 0; j < i; j++) { ret[j] = temp[n - 1 - j]; }
+  char* ret = b_alloc(a, n + 1);
+  for (int j = 0; j < n; j++) { ret[j] = temp[n - 1 - j]; }
   ret[n] = '\0';
   return ret;
 }

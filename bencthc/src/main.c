@@ -14,7 +14,7 @@
 
 int main() {
 
-  const int f = b_fopen("bencthc/tests/return67.c");
+  const int f = b_fopenRead("bencthc/tests/return67.c");
   if (f < 0) { die("could not open file"); }
 
   Arena* data = b_fread(f);

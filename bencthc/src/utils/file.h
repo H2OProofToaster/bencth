@@ -11,7 +11,8 @@
 typedef
 long unsigned int size_t;
 
-int b_fopen(const char* path);
+int b_fopenRead(const char* path);
+int b_fopenWrite(const char* path);
 int b_fclose(int fd);
 int b_fstat(int fd, struct stat* st);
 size_t b_fsize(int fd);

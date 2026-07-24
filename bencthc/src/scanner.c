@@ -183,7 +183,7 @@ Scanner* scan(const char* sourcePath) {
   s->line = 1;
 
   //read from file
-  const int f =  b_fopen(sourcePath);
+  const int f =  b_fopenRead(sourcePath);
   s->length = b_fsize(f);
   s->source = (char*)b_fread(f) + sizeof(Arena);
 

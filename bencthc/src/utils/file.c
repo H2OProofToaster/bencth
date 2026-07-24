@@ -14,9 +14,14 @@
 typedef
 long unsigned int size_t;
 
-int b_fopen(const char* path) {
+int b_fopenRead(const char* path) {
 
-  return open(path, O_RDWR | O_CREAT);
+  return open(path, O_RDONLY);
+}
+
+int b_fopenWrite(const char* path) {
+
+  return open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 }
 
 int b_fclose(const int fd) {

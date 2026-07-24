@@ -7,10 +7,12 @@
 #include "utils/string.h"
 #include "bencthc/src/parser.h"
 #include "bencthc/src/utils/allocator.h"
+#include "utils/exit.h"
 
 int generate(const Parser* p) {
 
-  const int fd = b_fopen("bencthc/tests/out.s");
+  const int fd = b_fopenWrite("bencthc/tests/out.s");
+  if (fd < 0) { die("could not open output file"); }
   Arena* a = b_allocArena();
 
   //parser verified that entry point is called main
@@ -21,7 +23,7 @@ int generate(const Parser* p) {
   const char* retNum = b_intToString(a, p->program->function->stmts[0]->returnStmt.value->literalExpr.value);
   b_fwrite(fd, retNum, b_strlen(retNum));
 
-  b_fwrite(fd, ",%eax\n", b_strlen(",%eax\n"));
+  b_fwrite(fd, ", %eax\n", b_strlen(", %eax\n"));
   b_fwrite(fd, "\tret\n", b_strlen("\tret\n"));
 
   return fd;

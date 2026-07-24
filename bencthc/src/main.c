@@ -8,6 +8,7 @@
 #include "bencthc/src/utils/allocator.h"
 #include "bencthc/src/scanner.h"
 #include "bencthc/src/parser.h"
+#include "bencthc/src/codeGenerator.h"
 
 #include <stdlib.h>
 
@@ -32,6 +33,8 @@ int main() {
   const Parser* parser = parse(scanner);
 
   printProgram(parser->program);
+
+  generate(parser);
 
   return 0;
 }

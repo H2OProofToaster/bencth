@@ -20,3 +20,52 @@ void b_lexemeToLiteral(Token* t) {
 
   t->literal.b_string[t->length] = '\0';
 }
+
+size_t b_strlen(const char* data) {
+
+  size_t count = 0;
+  while (*data++ != '\0') { count++; }
+  return count;
+}
+
+int b_strcmp(const char* a, const char* b) {
+
+  if (b_strlen(a) != b_strlen(b)) { return 1; }
+
+  while (*a != '\0') {
+
+    if (*a++ != *b++) { return 0; }
+  }
+
+  return 1;
+}
+
+char* b_intToString(Arena* a, int i) {
+
+  if (i == 0) {
+
+    char* ret = b_alloc(a, 2);
+    ret[0] = '0';
+    ret[1] = '\0';
+    return ret;
+  }
+
+  int negative = i < 0;
+  i = negative ? -i : i;
+
+  char temp[32];
+  int n = 0;
+
+  while (i > 0) {
+
+    temp[n++] = (char)('0' + i % 10);
+    i /= 10;
+  }
+
+  if (negative) { temp[i++] = '-'; }
+
+  char* ret = b_alloc(a, i + 1);
+  for (int j = 0; j < i; j++) { ret[j] = temp[n - 1 - j]; }
+  ret[n] = '\0';
+  return ret;
+}

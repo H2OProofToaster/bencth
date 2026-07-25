@@ -24,7 +24,7 @@ int main() {
 
   b_printString((char*)data + sizeof(Arena));
 
-  free(data);
+  b_free(data);
 
   const Scanner* scanner = scan("bencthc/tests/return67.c");
 
@@ -34,7 +34,12 @@ int main() {
 
   printProgram(parser->program);
 
-  generate(parser);
+  Arena* codegenArena = generate(parser);
+
+  //free arenas
+  b_free(scanner->a);
+  b_free(parser->a);
+  b_free(codegenArena);
 
   return 0;
 }

@@ -144,7 +144,7 @@ void generateStatements(const int fd, const Function* f) {
   }
 }
 
-int generate(const Parser* p) {
+Arena* generate(const Parser* p) {
 
   const int fd = b_fopenWrite("bencthc/tests/out.s");
   if (fd < 0) { die("could not open output file"); }
@@ -156,5 +156,5 @@ int generate(const Parser* p) {
 
   generateStatements(fd, p->program->function);
 
-  return fd;
+  return codegenArena;
 }

@@ -47,6 +47,14 @@ typedef struct {
   Function* function;
 } Program;
 
+typedef struct SymbolTable{
+
+  Token** symbols;
+  size_t count;
+
+  struct SymbolTable* outerScope;
+} SymbolTable;
+
 typedef struct {
 
   //node storage
@@ -61,6 +69,9 @@ typedef struct {
 
   //head of ast
   Program* program;
+
+  //symbol table
+  SymbolTable* symbolTable;
 } Parser;
 
 Parser* parse(const Scanner* s);

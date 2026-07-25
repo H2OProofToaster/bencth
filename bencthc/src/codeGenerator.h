@@ -7,6 +7,6 @@
 
 #include "bencthc/src/parser.h"
 
-int generate(const Parser* p);
+Arena* generate(const Parser* p);
 
 #endif //BENCTH_CODEGENERATOR_H

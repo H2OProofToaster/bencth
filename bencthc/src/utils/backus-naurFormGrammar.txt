@@ -1,5 +1,6 @@
 <program> ::= <function>
 
+//scope reduction from program to function
 <function> ::= "INT" "IDENTIFIER" "LEFT_PAREN" "RIGHT_PAREN" "LEFT_BRACE" <statement>? <returnStatement> "RIGHT_BRACE"
 
 <statement> ::= <returnStatement> | <exprStatement> | <declarationStatement>

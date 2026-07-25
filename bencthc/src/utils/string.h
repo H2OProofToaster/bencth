@@ -14,5 +14,6 @@ void b_lexemeToLiteral(Token* t);
 size_t b_strlen(const char* data);
 int b_strcmp(const char* a, const char* b);
 char* b_intToString(Arena* a, int i);
+char* b_concat(Arena* a, const char* b, const char* c);
 
 #endif //BENCTH_STRING_H

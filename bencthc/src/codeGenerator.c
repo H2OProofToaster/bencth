@@ -9,22 +9,152 @@
 #include "bencthc/src/utils/allocator.h"
 #include "utils/exit.h"
 
+static Arena* codegenArena = NULL;
+
+void writeInstr(const int fd, const char* mnem, const char* ops) {
+
+  //  mnem  ops
+  //^^
+  b_fwrite(fd, "\t", 1);
+
+  //  mnem  ops
+  //  ^^^^
+  b_fwrite(fd, mnem, b_strlen(mnem));
+
+  if (ops != NULL) {
+
+    //  mnem  ops
+    //      ^^
+    b_fwrite(fd, "\t", 1);
+
+    //  mnem  ops
+    //        ^^^
+    b_fwrite(fd, ops, b_strlen(ops));
+  }
+
+  //  mnem  ops
+  //           ^
+  b_fwrite(fd, "\n", 1);
+}
+
+void writeLabel(const int fd, const char* label) {
+
+  //label:
+  //^^^^^
+  b_fwrite(fd, label, b_strlen(label));
+
+  //label:
+  //     ^^
+  b_fwrite(fd, ":\n", 2);
+}
+
+void writeDirective(const int fd, const char* directive, const char* args) {
+
+  //  .directive  args
+  //^^^
+  b_fwrite(fd, "\t.", 2);
+
+  //  .directive  args
+  //   ^^^^^^^^^
+  b_fwrite(fd, directive, b_strlen(directive));
+
+  //  .directive  args
+  //            ^^
+  b_fwrite(fd, "\t", 1);
+
+  //  .directive  args
+  //              ^^^^
+  b_fwrite(fd, args, b_strlen(args));
+
+  //  .directive  args
+  //                  ^
+  b_fwrite(fd, "\n", 1);
+}
+
+void writeComment(const int fd, const char* comment) {
+
+  //#comment
+  //^
+  b_fwrite(fd, "#", 1);
+
+  //#comment
+  // ^^^^^^^
+  b_fwrite(fd, comment, b_strlen(comment));
+
+  //#comment
+  //        ^
+  b_fwrite(fd, "\n", 1);
+}
+
+char* generateExpr(const Expr* e) {
+
+  switch (e->type) {
+
+    case EXPR_BINARY:
+      die("binary expressions not yet supported"); //return generateBinary(e->binary.left, e->binary.operator, e->binary.right);
+      break;
+
+    case EXPR_UNARY:
+      die("unary expressions not yet supported"); //return generateUnary(e->unary.op, e->unary.operand);
+      break;
+
+    case EXPR_LITERAL:
+      return b_concat(codegenArena, "$\0", b_intToString(codegenArena, e->literal.value));
+      break;
+
+    case EXPR_VARIABLE:
+      die("variable expressions not yet supported"); //ts is going to fry me
+      break;
+
+    case EXPR_GROUPING:
+      return generateExpr(e->grouping.inner);
+      break;
+
+    case EXPR_ASSIGN:
+      die("assignment expressions not yet supported"); //ts is also going to fry me
+      break;
+
+    default:
+      return NULL;
+  }
+}
+
+void generateStatements(const int fd, const Function* f) {
+
+  for (size_t i = 0; i < f->count; i++) {
+
+    switch (f->stmts[i]->type) {
+
+      case STMT_RETURN:
+        writeInstr(fd, "movl", generateExpr(f->stmts[i]->returnStmt.expr));
+        writeInstr(fd, "ret", NULL);
+        break;
+
+      case STMT_EXPR:
+        die("expressions not yet supported");
+        break;
+
+      case STMT_DECL:
+        die("declarations not yet supported");
+        break;
+
+      default:
+        break;
+    }
+  }
+}
+
 int generate(const Parser* p) {
 
   const int fd = b_fopenWrite("bencthc/tests/out.s");
   if (fd < 0) { die("could not open output file"); }
-  Arena* a = b_allocArena();
+  codegenArena = b_allocArena();
 
   //parser verified that entry point is called main
-  b_fwrite(fd, "\t.globl\tmain\n", b_strlen("\t.globl\tmain\n"));
-  b_fwrite(fd, "main:\n", b_strlen("main:\n"));
-  b_fwrite(fd, "\tmovl\t$", b_strlen("\tmovl\t$"));
+  writeDirective(fd, "globl", "main");
+  writeLabel(fd, "main");
 
-  const char* retNum = b_intToString(a, p->program->function->stmts[0]->returnStmt.value->literalExpr.value);
-  b_fwrite(fd, retNum, b_strlen(retNum));
-
-  b_fwrite(fd, ", %eax\n", b_strlen(", %eax\n"));
-  b_fwrite(fd, "\tret\n", b_strlen("\tret\n"));
+  generateStatements(fd, p->program->function);
 
   return fd;
 }

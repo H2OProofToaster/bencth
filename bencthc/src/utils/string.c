@@ -71,3 +71,14 @@ char* b_intToString(Arena* a, int i) {
   ret[n] = '\0';
   return ret;
 }
+
+char* b_concat(Arena* a, const char* b, const char* c) {
+
+  char* ret = b_alloc(a, b_strlen(b) + b_strlen(c) + 1);
+
+  for (size_t i = 0; i < b_strlen(b); i++) { ret[i] = b[i]; }
+  for (size_t i = 0; i < b_strlen(c); i++) { ret[b_strlen(b) + i] = c[i]; }
+  ret[b_strlen(b) + b_strlen(c)] = '\0';
+
+  return ret;
+}

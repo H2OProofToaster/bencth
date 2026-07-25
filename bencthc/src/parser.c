@@ -41,7 +41,7 @@ Expr* parsePrimary(Parser* p) {
 
     Expr* curr = b_alloc(p->a, sizeof(Expr));
     curr->type = EXPR_LITERAL;
-    curr->literalExpr.value = advance(p)->literal.b_integer;
+    curr->literal.value = advance(p)->literal.b_integer;
     return curr;
   }
 
@@ -106,7 +106,7 @@ Stmt* parseReturnStmt(Parser* p) {
   curr->type = STMT_RETURN;
 
   consume(p, RETURN, "expected 'return'");
-  curr->returnStmt.value = parseExpr(p);
+  curr->returnStmt.expr = parseExpr(p);
   consume(p, SEMICOLON, "expected ';' after return value");
 
   return curr;
@@ -122,7 +122,7 @@ Stmt* parseDeclarationStmt(Parser* p) {
 
   if (check(p, EQUALS)) {
 
-    curr->declStmt.value = parseExpr(p);
+    curr->declStmt.expr = parseExpr(p);
   }
 
   consume(p, SEMICOLON, "expected ';' after variable declaration");
@@ -134,7 +134,7 @@ Stmt* parseExpressionStmt(Parser* p) {
   Stmt* curr = b_alloc(p->a, sizeof(Stmt));
   curr->type = STMT_EXPR;
 
-  curr->exprStmt.value = parseExpr(p);
+  curr->exprStmt.expr = parseExpr(p);
   consume(p, SEMICOLON, "expected ';' after expression");
 
   return curr;
@@ -224,7 +224,7 @@ void printExpr(Expr* e, int depth) {
 
     case EXPR_LITERAL:
       b_printStringNoNewline("Literal: ");
-      b_printInt(e->literalExpr.value);
+      b_printInt(e->literal.value);
       break;
 
     case EXPR_VARIABLE:
@@ -253,7 +253,7 @@ void printExpr(Expr* e, int depth) {
     case EXPR_ASSIGN:
       b_printStringNoNewline("Assign: ");
       b_printString(e->assign.name);
-      printExpr(e->assign.value, depth + 1);
+      printExpr(e->assign.expr, depth + 1);
       break;
   }
 }
@@ -265,19 +265,19 @@ void printStmt(Stmt* s, int depth) {
 
     case STMT_RETURN:
       b_printString("Return:");
-      printExpr(s->returnStmt.value, depth + 1);
+      printExpr(s->returnStmt.expr, depth + 1);
       break;
 
     case STMT_EXPR:
       b_printString("ExprStmt:");
-      printExpr(s->exprStmt.value, depth + 1);
+      printExpr(s->exprStmt.expr, depth + 1);
       break;
 
     case STMT_DECL:
       b_printStringNoNewline("Decl: ");
       b_printString(s->declStmt.identifier);
-      if (s->declStmt.value != NULL) {
-        printExpr(s->declStmt.value, depth + 1);
+      if (s->declStmt.expr != NULL) {
+        printExpr(s->declStmt.expr, depth + 1);
       }
       break;
   }

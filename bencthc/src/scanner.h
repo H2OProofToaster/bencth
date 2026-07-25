@@ -49,7 +49,7 @@ typedef struct {
   enum TokenType type;
   char* lexeme; //pointer into source
   size_t length; //length of lexeme
-  Literal literal; //value for numbers and strings/chars, null terminated (loc
+  Literal literal; //value for numbers and strings/chars, null terminated (locked af)
   int line;
 
 } Token;

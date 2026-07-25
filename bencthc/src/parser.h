@@ -14,10 +14,10 @@ typedef struct Expr {
   union {
     struct { struct Expr* left; enum TokenType operator; struct Expr* right; } binary;
     struct { enum TokenType op; struct Expr* operand; } unary;
-    struct { int value; } literalExpr;
+    struct { int value; } literal;
     struct { char* name; } variable;
     struct { struct Expr* inner; } grouping;
-    struct { char* name; struct Expr* value; } assign;
+    struct { char* name; struct Expr* expr; } assign;
   };
 } Expr;
 
@@ -29,9 +29,9 @@ typedef struct {
 
   union {
 
-    struct { Expr* value; } returnStmt;
-    struct { Expr* value; } exprStmt;
-    struct { char* identifier; Expr* value; } declStmt;
+    struct { Expr* expr; } returnStmt;
+    struct { Expr* expr; } exprStmt;
+    struct { char* identifier; Expr* expr; } declStmt;
   };
 } Stmt;
 

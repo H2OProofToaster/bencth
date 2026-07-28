@@ -47,13 +47,37 @@ typedef struct {
   Function* function;
 } Program;
 
-typedef struct SymbolTable{
+typedef struct {
 
-  Token** symbols;
+  Token* token;
+  int offset; //filled in at codegen
+} Symbol;
+
+typedef struct SymbolTable {
+
+  Symbol** symbols;
   size_t count;
-
-  struct SymbolTable* outerScope;
 } SymbolTable;
+
+typedef struct {
+
+  Token* token;
+  //this really isn't implemented, so js don't use it
+} Type;
+
+typedef struct TypeTable {
+
+  Type** types;
+  size_t count;
+} TypeTable;
+
+typedef struct IdentifierTable{
+
+  SymbolTable* symbolTable;
+  TypeTable* typeTable;
+
+  struct IdentifierTable* outerScope;
+} IdentifierTable;
 
 typedef struct {
 
@@ -70,8 +94,8 @@ typedef struct {
   //head of ast
   Program* program;
 
-  //symbol table
-  SymbolTable* symbolTable;
+  //tables
+  IdentifierTable* iT;
 } Parser;
 
 Parser* parse(const Scanner* s);

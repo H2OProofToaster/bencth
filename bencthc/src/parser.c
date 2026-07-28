@@ -8,14 +8,20 @@
 #include "utils/string.h"
 
 //forward declarations
-Expr* parseExpr(Parser* p, SymbolTable* sT);
+Expr* parseExpr(Parser* p, IdentifierTable* iT);
+static Arena* parserArena = NULL;
 
-static Token* peek(const Parser* p) {
+Token* peek(const Parser* p) {
 
   return &p->tokens[p->current];
 }
 
-static Token* advance(Parser* p) {
+Token* peekNext(const Parser* p) {
+
+  return &p->tokens[p->current + 1];
+}
+
+Token* advance(Parser* p) {
 
   Token* t = &p->tokens[p->current];
   if (p->current < p->count) { p->current++; }
@@ -27,6 +33,23 @@ int check(const Parser* p, const enum TokenType type) {
   return peek(p)->type == type;
 }
 
+int isType(const Token* t, const TypeTable* tT) {
+
+  for (size_t i = 0; i < tT->count; i++) {
+
+    if (b_strcmp(t->literal.b_string, tT->types[i]->token->literal.b_string) == 0) { return 1; }
+  }
+
+  switch (t->type) {
+
+    case INT:
+      return 1;
+
+    default:
+      return 0;
+  }
+}
+
 Token* consume(Parser* p, const enum TokenType type, const char* err) {
 
   if (check(p, type)) { return advance(p); }
@@ -35,25 +58,30 @@ Token* consume(Parser* p, const enum TokenType type, const char* err) {
   return NULL;
 }
 
-SymbolTable* initSymbolTable(Arena* a, SymbolTable* outer) {
+IdentifierTable* initIdentifierTables(IdentifierTable* outer) {
 
-  SymbolTable* sT = b_alloc(a, sizeof(SymbolTable));
-  sT->count = 0;
-  sT->outerScope = outer;
-  return sT;
+  IdentifierTable* iT = b_alloc(parserArena, sizeof(IdentifierTable));
+
+  iT->symbolTable = b_alloc(parserArena, sizeof(SymbolTable));
+  iT->typeTable = b_alloc(parserArena, sizeof(TypeTable));
+  iT->symbolTable->count = 0;
+  iT->typeTable->count = 0;
+  iT->outerScope = outer;
+  return iT;
 }
 
-size_t addSymbol(SymbolTable* sT, Token* t) {
+void addSymbol(SymbolTable* table, Token* token) {
 
-  sT->symbols[++sT->count] = t;
-  return sT->count;
+  Symbol* s = b_alloc(parserArena, sizeof(Symbol));
+  s->token = token;
+  table->symbols[++table->count] = s;
 }
 
-Expr* parsePrimary(Parser* p, SymbolTable* sT) {
+Expr* parsePrimary(Parser* p, IdentifierTable* iT) {
 
   if (check(p, INTEGER)) {
 
-    Expr* curr = b_alloc(p->a, sizeof(Expr));
+    Expr* curr = b_alloc(parserArena, sizeof(Expr));
     curr->type = EXPR_LITERAL;
     curr->literal.value = advance(p)->literal.b_integer;
     return curr;
@@ -61,11 +89,12 @@ Expr* parsePrimary(Parser* p, SymbolTable* sT) {
 
   if (check(p, IDENTIFIER)) {
 
-    Expr* curr = b_alloc(p->a, sizeof(Expr));
+    Expr* curr = b_alloc(parserArena, sizeof(Expr));
     curr->type = EXPR_VARIABLE;
-    curr->variable.name = advance(p)->literal.b_string;
+    Token* t = advance(p);
+    curr->variable.name = t->literal.b_string;
 
-
+    addSymbol(iT->symbolTable, t);
 
     return curr;
   }
@@ -73,10 +102,10 @@ Expr* parsePrimary(Parser* p, SymbolTable* sT) {
   if (check(p, LEFT_PAREN)) {
 
     advance(p); //eat '('
-    Expr* inner = parseExpr(p, sT);
+    Expr* inner = parseExpr(p, iT);
     consume(p, RIGHT_PAREN, "expected ')' after expression");
 
-    Expr* curr = b_alloc(p->a, sizeof(Expr));
+    Expr* curr = b_alloc(parserArena, sizeof(Expr));
     curr->type = EXPR_GROUPING;
     curr->grouping.inner = inner;
     return curr;
@@ -86,22 +115,42 @@ Expr* parsePrimary(Parser* p, SymbolTable* sT) {
   return NULL;
 }
 
-Expr* parseUnary(Parser* p, SymbolTable* sT) {
+Expr* parseUnary(Parser* p, IdentifierTable* iT) {
 
   //no unary operators currently
-  return parsePrimary(p, sT);
+  return parsePrimary(p, iT);
 }
 
-Expr* parseAddition(Parser* p, SymbolTable* sT) {
+Expr* parseMultiplication(Parser* p, IdentifierTable* iT) {
 
-  Expr* left = parseUnary(p, sT);
+  Expr* left = parseUnary(p, iT);
 
-  while (check(p, PLUS)) {
+  while (check(p, STAR) || check(p, FORWARD_SLASH)) {
 
     Token* operator = advance(p);
-    Expr* right = parseUnary(p, sT);
+    Expr* right = parseUnary(p, iT);
 
-    Expr* curr = b_alloc(p->a, sizeof(Expr));
+    Expr* curr = b_alloc(parserArena, sizeof(Expr));
+    curr->type = EXPR_BINARY;
+    curr->binary.left = left;
+    curr->binary.operator = operator->type;
+    curr->binary.right = right;
+    left = curr;
+  }
+
+  return left;
+}
+
+Expr* parseAddition(Parser* p, IdentifierTable* iT) {
+
+  Expr* left = parseMultiplication(p, iT);
+
+  while (check(p, PLUS) || check(p, MINUS)) {
+
+    Token* operator = advance(p);
+    Expr* right = parseMultiplication(p, iT);
+
+    Expr* curr = b_alloc(parserArena, sizeof(Expr));
     curr->type = EXPR_BINARY;
     curr->binary.left = left;
     curr->binary.operator = operator->type;
@@ -112,26 +161,26 @@ Expr* parseAddition(Parser* p, SymbolTable* sT) {
   return left;
 }
 
-Expr* parseExpr(Parser* p, SymbolTable* sT) {
+Expr* parseExpr(Parser* p, IdentifierTable* iT) {
 
-  return parseAddition(p, sT);
+  return parseAddition(p, iT);
 }
 
-Stmt* parseReturnStmt(Parser* p, SymbolTable* sT) {
+Stmt* parseReturnStmt(Parser* p, IdentifierTable* iT) {
 
-  Stmt* curr = b_alloc(p->a, sizeof(Stmt));
+  Stmt* curr = b_alloc(parserArena, sizeof(Stmt));
   curr->type = STMT_RETURN;
 
   consume(p, RETURN, "expected 'return'");
-  curr->returnStmt.expr = parseExpr(p, sT);
+  curr->returnStmt.expr = parseExpr(p, iT);
   consume(p, SEMICOLON, "expected ';' after return value");
 
   return curr;
 }
 
-Stmt* parseDeclarationStmt(Parser* p, SymbolTable* sT) {
+Stmt* parseDeclarationStmt(Parser* p, IdentifierTable* iT) {
 
-  Stmt* curr = b_alloc(p->a, sizeof(Stmt));
+  Stmt* curr = b_alloc(parserArena, sizeof(Stmt));
   curr->type = STMT_DECL;
 
   consume(p, INT, "expected 'int'");
@@ -139,55 +188,67 @@ Stmt* parseDeclarationStmt(Parser* p, SymbolTable* sT) {
 
   if (check(p, EQUALS)) {
 
-    curr->declStmt.expr = parseExpr(p, sT);
+    curr->declStmt.expr = parseExpr(p, iT);
   }
 
   consume(p, SEMICOLON, "expected ';' after variable declaration");
   return curr;
 }
 
-Stmt* parseExpressionStmt(Parser* p, SymbolTable* sT) {
+Stmt* parseExpressionStmt(Parser* p, IdentifierTable* iT) {
 
-  Stmt* curr = b_alloc(p->a, sizeof(Stmt));
+  Stmt* curr = b_alloc(parserArena, sizeof(Stmt));
   curr->type = STMT_EXPR;
 
-  curr->exprStmt.expr = parseExpr(p, sT);
+  curr->exprStmt.expr = parseExpr(p, iT);
   consume(p, SEMICOLON, "expected ';' after expression");
 
   return curr;
 }
 
-Stmt* parseStmt(Parser* p, SymbolTable* sT) {
+Stmt* parseStmt(Parser* p, IdentifierTable* iT) {
 
   switch (peek(p)->type) {
 
-    case RETURN: return parseReturnStmt(p, sT);
-    case INT: return parseDeclarationStmt(p, sT);
-    case IDENTIFIER: return parseExpressionStmt(p, sT);
+    case RETURN: return parseReturnStmt(p, iT);
+    case IDENTIFIER:
+      consume(p, EQUALS, "expected '=' after variable");
+      return parseExpressionStmt(p, iT);
 
     default:
+
+      if (isType(peek(p), iT->typeTable)) {
+
+        return parseDeclarationStmt(p, iT);
+      }
+
       die("expected statement");
       return NULL;
   }
 }
 
-Function* parseFunction(Parser* p, SymbolTable* sT) {
+Function* parseFunction(Parser* p, IdentifierTable* iT) {
 
-  Function* curr = b_alloc(p->a, sizeof(Function));
-  curr->stmts = b_alloc(p->a, sizeof(Stmt*) * (p->count - p->current));
+  Function* curr = b_alloc(parserArena, sizeof(Function));
+  curr->stmts = b_alloc(parserArena, sizeof(Stmt*) * (p->count - p->current));
   curr->count = 0;
-  SymbolTable* innerST = initSymbolTable(p->a, sT);
+  IdentifierTable* innerIT = initIdentifierTables(iT);
 
   consume(p, INT, "expected return type of 'int'");
-  curr->identifier = consume(p, IDENTIFIER, "expected function name")->literal.b_string;
-  //add that identifier to symbol table
+  Token* t = consume(p, IDENTIFIER, "expected function name");
+  curr->identifier = t->literal.b_string;
+
+  //function identifier gets added to the scope its in only
+  //i.e. you can still name a variable foo inside a function foo()
+  addSymbol(iT->symbolTable, t);
+
   consume(p, LEFT_PAREN, "expected '('");
   consume(p, RIGHT_PAREN, "expected ')'");
   consume(p, LEFT_BRACE, "expected '{'");
 
   while (!check(p, RIGHT_BRACE)) {
 
-    curr->stmts[curr->count++] = parseStmt(p, innerST);
+    curr->stmts[curr->count++] = parseStmt(p, innerIT);
   }
 
   consume(p, RIGHT_BRACE, "expected '}'");
@@ -195,26 +256,26 @@ Function* parseFunction(Parser* p, SymbolTable* sT) {
   return curr;
 }
 
-Program* parseProgram(Parser* p, SymbolTable* sT) {
+Program* parseProgram(Parser* p, IdentifierTable* iT) {
 
-  Program* curr = b_alloc(p->a, sizeof(Program));
-  curr->function = parseFunction(p, sT);
+  Program* curr = b_alloc(parserArena, sizeof(Program));
+  curr->function = parseFunction(p, iT);
   return curr;
 }
 
 Parser* parse(const Scanner* s) {
 
-  Arena* a = b_allocArena();
+  parserArena = b_allocArena();
 
-  Parser* p = b_alloc(a, sizeof(Parser));
-  p->a = a;
+  Parser* p = b_alloc(parserArena, sizeof(Parser));
+  p->a = parserArena;
   p->tokens = s->tokens;
   p->count = s->count;
   p->current = 0;
 
-  p->symbolTable = initSymbolTable(a, NULL);
+  p->iT = initIdentifierTables(NULL);
 
-  p->program = parseProgram(p, p->symbolTable);
+  p->program = parseProgram(p, p->iT);
 
   //check that entry is called main
   if (b_strcmp(p->program->function->identifier, "main") != 0) { die("entry function not called main"); }

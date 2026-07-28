@@ -131,20 +131,26 @@ void scanToken(Scanner* s) {
     case '{': t = addToken(s, LEFT_BRACE, c, s->line); t->literal.b_char = '{'; break;
     case '}': t = addToken(s, RIGHT_BRACE, c, s->line); t->literal.b_char = '}'; break;
     case ';': t = addToken(s, SEMICOLON, c, s->line); t->literal.b_char = ';'; break;
+    case '-': t = addToken(s, MINUS, c, s->line); t->literal.b_char = '-'; break;
+    case '*': t = addToken(s, STAR, c, s->line); t->literal.b_char = '*'; break;
 
     //single OR double characters
 
     //only comments rn
+    //added division support 7/27/26
     case '/':
       if (peek(s) == '/') {
 
-        while (peek(s) != '\n' && !isAtEnd(s)) { advance(s); }
+        while (peek(s) != '\n' && !isAtEnd(s)) { c = advance(s); }
         //continue because c is now pointing at the newline
         //just let the '\n' case handle it to increment s->line
+        //don't do that, that's stupid if any of the next characters are in the comment 7/27/26
+        if (*c == '\n') { s->line++; break; }
       }
       else {
 
-        //division
+        t = addToken(s, FORWARD_SLASH, c, s->line);
+        t->literal.b_char = '/';
       }
       break;
 

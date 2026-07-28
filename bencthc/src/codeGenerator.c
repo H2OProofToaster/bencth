@@ -131,10 +131,19 @@ void generateStatements(const int fd, const Function* f) {
         break;
 
       case STMT_EXPR:
+        //ex: foo = expr
+        //1. need to find where foo is on stack
+        //2. evaluate expression
+        //3. check if that still fits in the stack there
+        //4. write to stack (either in new or old spot based on 3)
         die("expressions not yet supported");
         break;
 
       case STMT_DECL:
+        //ex: identifier bar = expr
+        //0. identifier (should) be already checked for dupes
+        //1. evaluate expression
+        //2. push onto stack
         die("declarations not yet supported");
         break;
 

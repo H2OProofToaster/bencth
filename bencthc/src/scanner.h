@@ -13,12 +13,13 @@ enum TokenType{
 
   //single characters
   EQUALS, PLUS, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
-  SEMICOLON,
+  SEMICOLON, MINUS, STAR,
 
   //single OR double characters
+  FORWARD_SLASH, DOUBLE_FORWARD_SLASH,
 
   //literals
-  IDENTIFIER, INTEGER, STRING,
+  IDENTIFIER, INTEGER, STRING, TYPE,
 
   //keywords
   RETURN, INT,

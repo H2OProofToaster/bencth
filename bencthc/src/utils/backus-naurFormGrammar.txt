@@ -1,18 +1,19 @@
-<program> ::= <function>
+<program> ::= <function> <comment>*
 
-//scope reduction from program to function
-<function> ::= "INT" "IDENTIFIER" "LEFT_PAREN" "RIGHT_PAREN" "LEFT_BRACE" <statement>? <returnStatement> "RIGHT_BRACE"
+//scope reduction from program to function//
+<function> ::= "INT" "IDENTIFIER" "LEFT_PAREN" "RIGHT_PAREN" "LEFT_BRACE" <statement>* <returnStatement> "RIGHT_BRACE"
 
-<statement> ::= <returnStatement> | <exprStatement> | <declarationStatement>
-<returnStatement> ::= "RETURN" <expr> "SEMICOLON"
-<exprStatement> ::= <expr> "SEMICOLON"
-<declarationStatement> ::= "INT" "IDENTIFIER" ("=" <expr>)? "SEMICOLON"
+<statement> ::= <returnStatement> | <exprStatement> | <declarationStatement> | <assignmentStatement> | <comment>
+<returnStatement> ::= "RETURN" <expr> "SEMICOLON" <comment>?
+<exprStatement> ::= <expr> "SEMICOLON" <comment>?
+<declarationStatement> ::= "INT" "IDENTIFIER" ("=" <expr>)? "SEMICOLON" <comment>?
+<assignmentStatement> ::= "IDENTIFIER" "=" <expr> "SEMICOLON" <comment>?
+<comment> = "//" anything
 
-<expr> ::= <assignment>
+<expr> ::= <addition>
 
-<assignment> ::= "IDENTIFIER" "=" <assignment> | <addition>
-
-<addition> ::= <unary> ( "+" <unary>)*
+<addition> ::= <multiplication> ( ("+" | "-") <multiplication> )*
+<multiplication> ::= <unary> ( ("*" | "/") <unary> )*
 
 <unary> ::= "-" <unary> | <primary>
 

@@ -87,7 +87,7 @@ typedef struct {
   int line;
 } Scanner;
 
-//holds the info of a keyword for the static ar
+//holds the info of a keyword for the static array
 typedef struct {
 
   const char* keyword;

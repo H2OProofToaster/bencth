@@ -96,6 +96,7 @@ typedef struct {
 
 } Keyword;
 
+//I really don't like this
 static const Keyword keywords[] = {
   {"return", 6, RETURN},
   {"int", 3, INT},

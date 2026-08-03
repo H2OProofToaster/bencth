@@ -11,6 +11,10 @@ Makefile
 *.cmake
 CMakeLists.txt
 
+# Assembly files
+*.asm
+*.s
+
 # Compiled Object files
 *.o
 *.obj

@@ -2,13 +2,13 @@
 // Created by nick on 6/27/26.
 //
 
+#include "bencthc/src/scanner.h"
+
 #include "bencthc/src/utils/file.h"
 #include "bencthc/src/utils/exit.h"
 #include "bencthc/src/utils/print.h"
-#include "bencthc/src/scanner.h"
-
-#include "utils/memory.h"
-#include "utils/string.h"
+#include "bencthc/src/utils/memory.h"
+#include "bencthc/src/utils/string.h"
 
 int isDigit(const char c) { return c >= '0' && c <= '9'; }
 
@@ -25,40 +25,78 @@ static char peek(const Scanner* s) { return s->curr[0]; }
 
 char peekNext(const Scanner* s) { return s->curr[1]; }
 
-Token* addToken(Scanner* s, const enum TokenType type, char* lexeme, const int line) {
+Token* addToken(Scanner* s) {
 
   Token* t = &s->tokens[s->count++];
   t->a = s->a;
-  t->type = type;
-  t->lexeme = lexeme;
-  t->line = line;
+  t->line = s->line;
 
   return t;
 }
 
 //check if an identifier is a reserved keyword
 //first does length check (idea gratefully from calude :)
-//then uses (to be implemented) memory comparison
-enum TokenType checkKeyword(const Token* t) {
+//then uses (to be cut from libc) memcmp
+//pulls from a static list of keywords in structs.h
+//(that's kinda wonky and I might fix eventually)
+void checkKeyword(Token* t) {
 
   for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
 
     if (t->length == keywords[i].length &&
         b_memcmp(t->lexeme, keywords[i].keyword, t->length) == 0) {
 
-      return keywords[i].type;
+      t->length = keywords[i].length;
+      t->type = keywords[i].type;
     }
   }
-
-  return IDENTIFIER;
 }
 
-void advanceNumber(Scanner* s, char* c) {
+//these consume functions wrap all the token-specific work to do
+//(I didn't want to clutter the switch in scanToken)
+//they should be pretty self-explanatory
+//don't hate on the spacing here, it's ORGANIZED
 
-  Token* t = addToken(s, INTEGER, c, s->line);
-  t->literal.b_integer = *c - '0';
+void consumeSingle(Scanner* s, const enum TokenType type, char* c) {
+
+  Token* t = addToken(s);
+
+  t->type = type;
+
+  t->lexeme = c;
+
   t->length = 1;
 
+  t->literal.b_char = *c;
+}
+
+void consumeDouble(Scanner* s, const enum TokenType type, char* c) {
+
+  Token* t = addToken(s);
+
+  t->type = type;
+
+  t->lexeme = c;
+
+  t->length = 2;
+
+  t->literal.b_string = b_alloc(s->a, 3);
+  t->literal.b_string[0] = *c;
+  t->literal.b_string[1] = *advance(s);
+  t->literal.b_string[2] = '\0';
+}
+
+void consumeNumber(Scanner* s, char* c) {
+
+  Token* t = addToken(s);
+
+  t->type = INTEGER;
+
+  t->lexeme = c;
+
+  t->length = 1;
+
+  t->literal.b_integer = *c - '0';
   while (isDigit(peek(s))) {
 
     t->literal.b_integer = t->literal.b_integer * 10 + ( *advance(s) - '0' );
@@ -66,33 +104,42 @@ void advanceNumber(Scanner* s, char* c) {
   }
 }
 
-void advanceIdentifier(Scanner* s, char* c) {
+void consumeIdentifier(Scanner* s, char* c) {
 
-  Token* t = addToken(s, IDENTIFIER, c, s->line);
+  Token* t = addToken(s);
+
+  t->type = IDENTIFIER;
+
+  t->lexeme = c;
+
   t->length = 1;
-
   while (isAlphaNumeric(peek(s))) {
 
     advance(s);
     t->length++;
   }
 
-  //check for reserved keyword
-  t->type = checkKeyword(t);
-
-  if (t->type == IDENTIFIER) { b_lexemeToLiteral(t); }
+  //check for reserved keyword;
+  //changes type to that if so
+  checkKeyword(t);
+  b_lexemeToLiteral(t);
 }
 
-void advanceString(Scanner* s, char* c) {
+void consumeString(Scanner* s, char* c) {
 
-  Token* t = addToken(s, STRING, c + 1, s->line);
+  Token* t = addToken(s);
+
+  t->type = STRING;
+
+  //skip over '"' that c is pointing to
+  t->lexeme = c + 1;
+
+  //0 b/c the start (the '"') isn't included in the lexeme or literal
   t->length = 0;
 
   //allocate space for literal
-  //upper bound of rest of source (ik that seems extra)
-  char* literal = b_alloc(s->a, (s->source + s->length) - s->curr + 1);
-  size_t length = 0;
-
+  //upper bound as the rest of source to be safe (ik that seems extra)
+  t->literal.b_string = b_alloc(s->a, s->source + s->length - s->curr + 1);
   while (peek(s) != '"' && !isAtEnd(s)) {
 
     //check for splice
@@ -104,16 +151,12 @@ void advanceString(Scanner* s, char* c) {
       continue; //don't count splice in length
     }
 
-    literal[length++] = *advance(s);
+    t->literal.b_string[t->length++] = *advance(s);
   }
-
   //unterminated string
   if (isAtEnd(s)) { die("unterminated string"); }
   advance(s); //eat closing "
-
-  literal[length] = '\0';
-  t->length = length;
-  t->literal.b_string = literal;
+  t->literal.b_string[t->length] = '\0';
 }
 
 void scanToken(Scanner* s) {
@@ -124,38 +167,38 @@ void scanToken(Scanner* s) {
   switch (*c) {
 
     //single characters
-    case '=': t = addToken(s, EQUALS, c, s->line); t->literal.b_char = '='; break;
-    case '+': t = addToken(s, PLUS, c, s->line); t->literal.b_char = '+'; break;
-    case '(': t = addToken(s, LEFT_PAREN, c, s->line); t->literal.b_char = '('; break;
-    case ')': t = addToken(s, RIGHT_PAREN, c, s->line); t->literal.b_char = ')'; break;
-    case '{': t = addToken(s, LEFT_BRACE, c, s->line); t->literal.b_char = '{'; break;
-    case '}': t = addToken(s, RIGHT_BRACE, c, s->line); t->literal.b_char = '}'; break;
-    case ';': t = addToken(s, SEMICOLON, c, s->line); t->literal.b_char = ';'; break;
-    case '-': t = addToken(s, MINUS, c, s->line); t->literal.b_char = '-'; break;
-    case '*': t = addToken(s, STAR, c, s->line); t->literal.b_char = '*'; break;
+    case '=': consumeSingle(s, EQUALS, c); break;
+    case '+': consumeSingle(s, PLUS, c); break;
+    case '(': consumeSingle(s, LEFT_PAREN, c); break;
+    case ')': consumeSingle(s, RIGHT_PAREN, c); break;
+    case '{': consumeSingle(s, LEFT_BRACE, c); break;
+    case '}': consumeSingle(s, RIGHT_BRACE, c); break;
+    case ';': consumeSingle(s, SEMICOLON, c); break;
+    case '-': consumeSingle(s, MINUS, c); break;
+    case '*': consumeSingle(s, STAR, c); break;
 
     //single OR double characters
 
     //only comments rn
     //added division support 7/27/26
     case '/':
+
+      //comment, b/c next is also a '/'
       if (peek(s) == '/') {
 
         while (peek(s) != '\n' && !isAtEnd(s)) { c = advance(s); }
-        //continue because c is now pointing at the newline
+        //continue because c(urr) is now pointing at the newline
         //just let the '\n' case handle it to increment s->line
         //don't do that, that's stupid if any of the next characters are in the comment 7/27/26
         if (*c == '\n') { s->line++; break; }
       }
-      else {
 
-        t = addToken(s, FORWARD_SLASH, c, s->line);
-        t->literal.b_char = '/';
-      }
+      //division
+      else { consumeSingle(s, FORWARD_SLASH, c); }
       break;
 
     //string literals
-    case '"': advanceString(s, c); break;
+    case '"': consumeString(s, c); break;
 
     //ignore whitespace
     case ' ':
@@ -170,10 +213,10 @@ void scanToken(Scanner* s) {
     default:
 
       //integers
-      if (isDigit(*c)) { advanceNumber(s, c); break; }
+      if (isDigit(*c)) { consumeNumber(s, c); break; }
 
       //identifier and keywords
-      if (isAlpha(*c)) { advanceIdentifier(s, c); break; }
+      if (isAlpha(*c)) { consumeIdentifier(s, c); break; }
 
       //error
       else { b_printString("unexpected character; continuing"); break; }
@@ -182,8 +225,8 @@ void scanToken(Scanner* s) {
 
 Scanner* scan(const char* sourcePath) {
 
+  //setup scanner struct
   Arena* a = b_allocArena();
-
   Scanner* s = b_alloc(a, sizeof(Scanner));
   s->a = a;
   s->line = 1;
@@ -203,57 +246,15 @@ Scanner* scan(const char* sourcePath) {
     scanToken(s);
   }
 
-  addToken(s, B_EOF, "", s->line);
+  //manually add EOF token bc idrc
+  Token* t = &s->tokens[s->count++];
+
+  t->type = B_EOF;
+
+  //no lexeme or literal because EOF is not in source buffer
+
+  t->literal.b_string = b_alloc(a, 6);
+  t->literal.b_string = "B_EOF";
 
   return s;
-}
-
-void printLiteral(const Token* t) {
-
-  switch (t->type) {
-
-    case EQUALS: case PLUS: case LEFT_PAREN: case RIGHT_PAREN:
-    case LEFT_BRACE: case RIGHT_BRACE: case SEMICOLON:
-      b_printChar(t->literal.b_char);
-      break;
-
-    case INTEGER:
-      b_printInt(t->literal.b_integer);
-      break;
-
-    case IDENTIFIER:
-    case STRING:
-      b_printString(t->literal.b_string);
-      break;
-
-    case RETURN:
-    case INT:
-      b_printString("kms"); // no real literal, print the keyword name
-      break;
-
-    case B_EOF:
-      b_printString("EOF");
-      break;
-  }
-
-  b_printChar('\n');
-}
-
-void printToken(const Token* t) {
-
-  b_printString("Token type: ");
-  b_printString("n/a");
-  b_printString(" Literal: ");
-  printLiteral(t); //yes this is hacky, idrc tho
-  b_printString(" Line: ");
-  b_printInt(t->line);
-  b_printString("\n");
-}
-
-void printTokens(const Scanner* s) {
-
-  for (size_t count = 0; count < s->count; count++) {
-
-    printToken(s->tokens + count);
-  }
 }

@@ -10,8 +10,6 @@
 #include "bencthc/src/parser.h"
 #include "bencthc/src/codeGenerator.h"
 
-#include <stdlib.h>
-
 int main() {
 
   const int f = b_fopenRead("bencthc/tests/return67.c");
@@ -28,7 +26,7 @@ int main() {
 
   const Scanner* scanner = scan("bencthc/tests/return67.c");
 
-  printTokens(scanner);
+  //printTokens(scanner);
 
   const Parser* parser = parse(scanner);
 

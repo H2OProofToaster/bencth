@@ -68,7 +68,7 @@ typedef struct {
 
 } Token;
 
-//created durring scanning/lexing and passed off to parser
+//created during scanning/lexing and passed off to parser
 typedef struct {
 
   //arena
@@ -101,5 +101,81 @@ static const Keyword keywords[] = {
   {"return", 6, RETURN},
   {"int", 3, INT},
 };
+
+//first used in parsing
+
+//encoding the grammar
+typedef enum { EXPR_BINARY, EXPR_UNARY, EXPR_LITERAL, EXPR_VARIABLE, EXPR_GROUPING, EXPR_ASSIGN } ExprType;
+typedef struct Expr {
+  ExprType type;
+  union {
+    struct { struct Expr* left; enum TokenType operator; struct Expr* right; } binary;
+    struct { enum TokenType op; struct Expr* operand; } unary;
+    struct { int value; } literal;
+    struct { char* name; } variable;
+    struct { struct Expr* inner; } grouping;
+    struct { char* name; struct Expr* expr; } assign;
+  };
+} Expr;
+
+typedef enum { STMT_RETURN, STMT_EXPR, STMT_DECL } StmtType;
+typedef struct {
+
+  StmtType type;
+
+  union {
+
+    struct { Expr* expr; } returnStmt;
+    struct { Expr* expr; } exprStmt;
+    struct { char* identifier; Expr* expr; } declStmt;
+  };
+} Stmt;
+
+typedef struct {
+
+  char* identifier;
+  Stmt** stmts;
+  size_t count;
+} Function;
+
+typedef struct {
+
+  Function* function;
+} Program;
+
+//symbols for lookup, stored in a linked list
+//ik, but we aren't really caring about lookup time right no
+typedef struct Symbol {
+
+  Token* token;
+  struct Symbol* next;
+
+  int offset; //filled in at codegen for stack lookup
+} Symbol;
+typedef struct SymbolTable{
+
+  Symbol* head;
+
+  struct SymbolTable* outerScope;
+} SymbolTable;
+
+typedef struct {
+
+  //node storage
+  Arena* a;
+
+  //from scanner
+  Token* tokens;
+  size_t count;
+
+  //next token index
+  size_t current;
+
+  //head of ast
+  Program* program;
+
+  //symbol table
+  SymbolTable* symbolTable;
+} Parser;
 
 #endif //BENCTH_STRUCTS_H

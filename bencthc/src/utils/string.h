@@ -7,6 +7,9 @@
 
 #include "bencthc/src/scanner.h"
 
+//integers *are* 32 bit so should die on overflow
+#define INT_TO_STRING_SIZE 32
+
 typedef
 long unsigned int size_t;
 

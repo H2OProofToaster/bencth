@@ -8,7 +8,7 @@
 
 Arena* b_allocArena() {
 
-  return b_allocArenaSize(64 * 1024 * 1024);
+  return b_allocArenaSize(ARENA_SIZE);
 }
 
 Arena* b_allocArenaSize(const size_t size) {

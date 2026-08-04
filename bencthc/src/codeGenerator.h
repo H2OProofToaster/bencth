@@ -5,7 +5,7 @@
 #ifndef BENCTH_CODEGENERATOR_H
 #define BENCTH_CODEGENERATOR_H
 
-#include "bencthc/src/parser.h"
+#include "structs.h"
 
 Arena* generate(const Parser* p);
 

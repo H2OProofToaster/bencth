@@ -3,11 +3,12 @@
 //
 
 #include "codeGenerator.h"
+
 #include "bencthc/src/utils/file.h"
-#include "utils/string.h"
-#include "bencthc/src/parser.h"
+#include "bencthc/src/utils/string.h"
 #include "bencthc/src/utils/allocator.h"
-#include "utils/exit.h"
+#include "bencthc/src/utils/exit.h"
+#include "bencthc/src/structs.h"
 
 static Arena* codegenArena = NULL;
 
@@ -92,27 +93,25 @@ char* generateExpr(const Expr* e) {
 
     case EXPR_BINARY:
       die("binary expressions not yet supported"); //return generateBinary(e->binary.left, e->binary.operator, e->binary.right);
-      break;
+      return NULL;
 
     case EXPR_UNARY:
       die("unary expressions not yet supported"); //return generateUnary(e->unary.op, e->unary.operand);
-      break;
+      return NULL;
 
     case EXPR_LITERAL:
       return b_concat(codegenArena, "$\0", b_intToString(codegenArena, e->literal.value));
-      break;
 
     case EXPR_VARIABLE:
       die("variable expressions not yet supported"); //ts is going to fry me
-      break;
+      return NULL;
 
     case EXPR_GROUPING:
       return generateExpr(e->grouping.inner);
-      break;
 
     case EXPR_ASSIGN:
       die("assignment expressions not yet supported"); //ts is also going to fry me
-      break;
+      return NULL;
 
     default:
       return NULL;

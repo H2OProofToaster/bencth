@@ -55,7 +55,7 @@ char* b_intToString(Arena* a, int i) {
   int negative = i < 0;
   i = negative ? -i : i;
 
-  char temp[32];
+  char temp[INT_TO_STRING_SIZE];
   int n = 0;
 
   while (i > 0) {

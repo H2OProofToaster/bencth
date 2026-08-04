@@ -9,6 +9,7 @@ typedef
 long unsigned int size_t;
 
 #define NULL ((void*)0)
+#define ARENA_SIZE (64 * 1024 * 1024)
 
 typedef struct {
 

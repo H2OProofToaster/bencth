@@ -4,13 +4,13 @@
 
 #include "codeGenerator.h"
 
-#include "bencthc/src/utils/file.h"
-#include "bencthc/src/utils/string.h"
-#include "bencthc/src/utils/allocator.h"
-#include "bencthc/src/utils/exit.h"
-#include "bencthc/src/structs.h"
+#include "utils/file.h"
+#include "utils/string.h"
+#include "utils/allocator.h"
+#include "utils/exit.h"
+#include "structs.h"
 
-char* generateExpr(const Expr* e);
+char* generateExpr(SymbolTable* sT, const Expr* e);
 
 static Arena* codegenArena = NULL;
 static int fd = -1;
@@ -115,7 +115,7 @@ Symbol* getSymbol(const SymbolTable* sT, const char* name) {
 
   for (Symbol* s = sT->head; s != NULL; s = s->next) {
 
-    if (s->token->literal.b_string == name) { return s; }
+    if ( b_strcmp(s->token->literal.b_string, name) == 0) { return s; }
   }
 
   if (sT->outerScope != NULL) {
@@ -135,18 +135,18 @@ char* getStackOffset(const Symbol* s) {
                   "(%rbp)"); //-offset(%rbp)
 }
 
-char* generateBinary(const Expr* left, const TokenType op, const Expr* right) {
+char* generateBinary(SymbolTable* sT, const Expr* left, const TokenType op, const Expr* right) {
 
   switch (op) {
 
     case PLUS: {
 
       //move left into rax
-      const char* ops1[] = { generateExpr(left), "%rax" };
+      const char* ops1[] = { generateExpr(sT, left), "%rax" };
       writeInstr("mov", 2, ops1);
 
       //add right to rax
-      const char* ops2[] = { "%rax", generateExpr(right) };
+      const char* ops2[] = { generateExpr(sT, right), "%rax" };
       writeInstr("add", 2, ops2);
 
       return "%rax";
@@ -155,11 +155,11 @@ char* generateBinary(const Expr* left, const TokenType op, const Expr* right) {
     case MINUS: {
 
       //move left into rax
-      const char* ops1[] = { generateExpr(left), "%rax" };
+      const char* ops1[] = { generateExpr(sT, left), "%rax" };
       writeInstr("mov", 2, ops1);
 
       //sub right from rax
-      const char* ops2[] = { "%rax", generateExpr(right) };
+      const char* ops2[] = { generateExpr(sT, right), "%rax" };
       writeInstr("sub", 2, ops2);
 
       return "%rax";
@@ -168,11 +168,11 @@ char* generateBinary(const Expr* left, const TokenType op, const Expr* right) {
     case STAR: {
 
       //move left into rax
-      const char* ops1[] = { generateExpr(left), "%rax" };
+      const char* ops1[] = { generateExpr(sT, left), "%rax" };
       writeInstr("mov", 2, ops1);
 
       //mult rax by right
-      const char* ops2[] = { "%rax", generateExpr(right) };
+      const char* ops2[] = { generateExpr(sT, right), "%rax" };
       writeInstr("imul", 2, ops2);
 
       return "%rax";
@@ -181,14 +181,14 @@ char* generateBinary(const Expr* left, const TokenType op, const Expr* right) {
     case FORWARD_SLASH: {
 
       //move left into rax
-      const char* ops1[] = { generateExpr(left), "%rax" };
+      const char* ops1[] = { generateExpr(sT, left), "%rax" };
       writeInstr("mov", 2, ops1);
 
-      //zero rdx
+      //sign extend rd
       writeInstr("cqto", 0, NULL);
 
       //divide by right
-      const char* ops2[] = { generateExpr(right) };
+      const char* ops2[] = { generateExpr(sT, right) };
       writeInstr("idiv", 1, ops2);
 
       return "%rax";
@@ -196,43 +196,38 @@ char* generateBinary(const Expr* left, const TokenType op, const Expr* right) {
 
     default:
       die("expected binary operator");
-      return NULL;
 
   }
 }
 
-char* generateExpr(const Expr* e) {
+char* generateExpr(SymbolTable* sT, const Expr* e) {
 
   switch (e->type) {
 
     case EXPR_BINARY:
-      return generateBinary(e->binary.left, e->binary.operator, e->binary.right);
+      return generateBinary(sT, e->binary.left, e->binary.operator, e->binary.right);
 
     case EXPR_UNARY:
       die("unary expressions not yet supported"); //return generateUnary(e->unary.op, e->unary.operand);
-      return NULL;
 
     case EXPR_LITERAL:
       return b_concat(codegenArena, "$", b_intToString(codegenArena, e->literal.value));
 
     case EXPR_VARIABLE:
-      die("variable expressions not yet supported"); //ts is going to fry me
-      return NULL;
+      return getStackOffset(getSymbol(sT, e->variable.name));
 
     case EXPR_GROUPING:
-      return generateExpr(e->grouping.inner);
+      return generateExpr(sT, e->grouping.inner);
 
     case EXPR_ASSIGN:
       die("assignment expressions not yet supported"); //ts is also going to fry me
-      return NULL;
 
     default:
       die("expected expression");
-      return NULL;
   }
 }
 
-void generateStatements(const Function* f) {
+void generateStatements(SymbolTable* sT, const Function* f) {
 
   for (size_t i = 0; i < f->count; i++) {
 
@@ -240,9 +235,8 @@ void generateStatements(const Function* f) {
 
       case STMT_RETURN: {
 
-        const char* ops[] = { generateExpr(f->stmts[i]->returnStmt.expr), "%rax" };
+        const char* ops[] = { generateExpr(sT, f->stmts[i]->returnStmt.expr), "%rax" };
         writeInstr("mov", 2, ops);
-        writeInstr("ret", 0, NULL);
         break;
       }
 
@@ -256,7 +250,7 @@ void generateStatements(const Function* f) {
         Symbol* s = getSymbol(f->symbolTable, f->stmts[i]->exprStmt.identifier);
         if (s == NULL) { die("undefined symbol"); }
 
-        const char* ops[] = { generateExpr(f->stmts[i]->declStmt.expr), getStackOffset(s) };
+        const char* ops[] = { generateExpr(sT, f->stmts[i]->exprStmt.expr), getStackOffset(s) };
         writeInstr("mov", 2, ops);
         break;
       }
@@ -274,7 +268,7 @@ void generateStatements(const Function* f) {
 
         if (f->stmts[i]->declStmt.expr != NULL) {
 
-          const char* ops[] = { generateExpr(f->stmts[i]->declStmt.expr), getStackOffset(s) };
+          const char* ops[] = { generateExpr(sT, f->stmts[i]->declStmt.expr), getStackOffset(s) };
           writeInstr("mov", 2, ops);
         }
         break;
@@ -286,11 +280,17 @@ void generateStatements(const Function* f) {
   }
 }
 
-Arena* generate(const Parser* p) {
+Arena* generate(const Parser* p, const char* name) {
 
-  fd = b_fopenWrite("bencthc/tests/out.s");
-  if (fd < 0) { die("could not open output file"); }
   codegenArena = b_allocArena();
+
+  if (name != NULL) { fd = b_fopenWrite(b_concat(codegenArena, name, ".s")); }
+  else { fd = b_fopenWrite("a.s"); }
+  if (fd < 0) { die("could not open output file"); }
+
+  //parser verified that entry point is called main
+  writeDirective("globl", "main");
+  writeLabel("main");
 
   //prologue
   const char* ops1[] = { "%rbp" };
@@ -299,14 +299,10 @@ Arena* generate(const Parser* p) {
   const char* ops2[] = { "%rsp", "%rbp" };
   writeInstr("mov", 2, ops2);
 
-  //parser verified that entry point is called main
-  writeDirective("global", "main");
-  writeLabel("main");
-
-  generateStatements(p->program->function);
+  generateStatements(p->program->function->symbolTable, p->program->function);
 
   //epilogue
-  writeInstr("pop", 1, ops1);
+  writeInstr("leave", 0, NULL);
   writeInstr("ret", 0, NULL);
 
   return codegenArena;

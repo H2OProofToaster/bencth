@@ -3,8 +3,9 @@
 //
 
 #include "allocator.h"
+
 #include <stdlib.h>
-#include "bencthc/src/utils/exit.h"
+#include "exit.h"
 
 Arena* b_allocArena() {
 

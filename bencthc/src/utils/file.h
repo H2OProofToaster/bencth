@@ -6,7 +6,7 @@
 #define BENCTH_FILE_H
 
 #include <sys/stat.h>
-#include "bencthc/src/utils/allocator.h"
+#include "allocator.h"
 
 typedef
 long unsigned int size_t;

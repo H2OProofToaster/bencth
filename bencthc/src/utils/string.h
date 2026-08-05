@@ -5,7 +5,8 @@
 #ifndef BENCTH_STRING_H
 #define BENCTH_STRING_H
 
-#include "bencthc/src/scanner.h"
+#include "../structs.h"
+#include "allocator.h"
 
 //integers *are* 32 bit so should die on overflow
 #define INT_TO_STRING_SIZE 32

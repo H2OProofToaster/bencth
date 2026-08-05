@@ -5,7 +5,7 @@
 #ifndef BENCTH_STRUCTS_H
 #define BENCTH_STRUCTS_H
 
-#include "bencthc/src/utils/allocator.h"
+#include "utils/allocator.h"
 
 typedef long unsigned int size_t;
 

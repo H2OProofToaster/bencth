@@ -5,6 +5,7 @@
 #ifndef BENCTH_EXIT_H
 #define BENCTH_EXIT_H
 
-void die(const char* err);
+//_Noreturn to tell ide that
+_Noreturn void die(const char* err);
 
 #endif //BENCTH_EXIT_H

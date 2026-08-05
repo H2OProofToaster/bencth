@@ -2,13 +2,13 @@
 // Created by nick on 6/27/26.
 //
 
-#include "bencthc/src/scanner.h"
+#include "scanner.h"
 
-#include "bencthc/src/utils/file.h"
-#include "bencthc/src/utils/exit.h"
-#include "bencthc/src/utils/print.h"
-#include "bencthc/src/utils/memory.h"
-#include "bencthc/src/utils/string.h"
+#include "utils/file.h"
+#include "utils/exit.h"
+#include "utils/print.h"
+#include "utils/memory.h"
+#include "utils/string.h"
 
 int isDigit(const char c) { return c >= '0' && c <= '9'; }
 
@@ -19,11 +19,11 @@ int isAlphaNumeric(const char c) { return isAlpha(c) || isDigit(c); }
 int isAtEnd(const Scanner* s) { return s->curr >= s->source + s->length; }
 
 //eat one char
-static char* advance(Scanner* s) { return s->curr++; }
+char* s_advance(Scanner* s) { return s->curr++; }
 
-static char peek(const Scanner* s) { return s->curr[0]; }
+char s_peek(const Scanner* s) { return s->curr[0]; }
 
-char peekNext(const Scanner* s) { return s->curr[1]; }
+char s_peekNext(const Scanner* s) { return s->curr[1]; }
 
 Token* addToken(Scanner* s) {
 
@@ -82,7 +82,7 @@ void consumeDouble(Scanner* s, const TokenType type, char* c) {
 
   t->literal.b_string = b_alloc(s->a, 3);
   t->literal.b_string[0] = *c;
-  t->literal.b_string[1] = *advance(s);
+  t->literal.b_string[1] = *s_advance(s);
   t->literal.b_string[2] = '\0';
 }
 
@@ -97,9 +97,9 @@ void consumeNumber(Scanner* s, char* c) {
   t->length = 1;
 
   t->literal.b_integer = *c - '0';
-  while (isDigit(peek(s))) {
+  while (isDigit(s_peek(s))) {
 
-    t->literal.b_integer = t->literal.b_integer * 10 + ( *advance(s) - '0' );
+    t->literal.b_integer = t->literal.b_integer * 10 + ( *s_advance(s) - '0' );
     t->length++;
   }
 }
@@ -113,9 +113,9 @@ void consumeIdentifier(Scanner* s, char* c) {
   t->lexeme = c;
 
   t->length = 1;
-  while (isAlphaNumeric(peek(s))) {
+  while (isAlphaNumeric(s_peek(s))) {
 
-    advance(s);
+    s_advance(s);
     t->length++;
   }
 
@@ -140,28 +140,28 @@ void consumeString(Scanner* s, char* c) {
   //allocate space for literal
   //upper bound as the rest of source to be safe (ik that seems extra)
   t->literal.b_string = b_alloc(s->a, s->source + s->length - s->curr + 1);
-  while (peek(s) != '"' && !isAtEnd(s)) {
+  while (s_peek(s) != '"' && !isAtEnd(s)) {
 
     //check for splice
-    if (peek(s) == '\\' && peekNext(s) == '\n') {
+    if (s_peek(s) == '\\' && s_peekNext(s) == '\n') {
 
-      advance(s); //eat backslash
-      advance(s); //eat newline
+      s_advance(s); //eat backslash
+      s_advance(s); //eat newline
       s->line++;
       continue; //don't count splice in length
     }
 
-    t->literal.b_string[t->length++] = *advance(s);
+    t->literal.b_string[t->length++] = *s_advance(s);
   }
   //unterminated string
   if (isAtEnd(s)) { die("unterminated string"); }
-  advance(s); //eat closing "
+  s_advance(s); //eat closing "
   t->literal.b_string[t->length] = '\0';
 }
 
 void scanToken(Scanner* s) {
 
-  char* c = advance(s);
+  char* c = s_advance(s);
 
   switch (*c) {
 
@@ -183,9 +183,9 @@ void scanToken(Scanner* s) {
     case '/':
 
       //comment, b/c next is also a '/'
-      if (peek(s) == '/') {
+      if (s_peek(s) == '/') {
 
-        while (peek(s) != '\n' && !isAtEnd(s)) { c = advance(s); }
+        while (s_peek(s) != '\n' && !isAtEnd(s)) { c = s_advance(s); }
         //continue because c(urr) is now pointing at the newline
         //just let the '\n' case handle it to increment s->line
         //don't do that, that's stupid if any of the next characters are in the comment 7/27/26
@@ -222,7 +222,7 @@ void scanToken(Scanner* s) {
   }
 }
 
-Scanner* scan(const char* sourcePath) {
+Scanner* scan(const int fd) {
 
   //setup scanner struct
   Arena* a = b_allocArena();
@@ -231,7 +231,7 @@ Scanner* scan(const char* sourcePath) {
   s->line = 1;
 
   //read from file
-  const int f =  b_fopenRead(sourcePath);
+  const int f = fd;
   s->length = b_fsize(f);
   s->source = (char*)b_fread(f) + sizeof(Arena);
 

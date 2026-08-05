@@ -5,9 +5,8 @@
 #ifndef BENCTH_PARSER_H
 #define BENCTH_PARSER_H
 
-#include "bencthc/src/scanner.h"
+#include "scanner.h"
 
 Parser* parse(const Scanner* s);
-void printProgram(const Program* p);
 
 #endif //BENCTH_PARSER_H

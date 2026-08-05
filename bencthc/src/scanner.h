@@ -5,8 +5,8 @@
 #ifndef BENCTH_SCANNER_H
 #define BENCTH_SCANNER_H
 
-#include "bencthc/src/structs.h"
+#include "structs.h"
 
-Scanner* scan(const char* sourcePath);
+Scanner* scan(int fd);
 
 #endif //BENCTH_SCANNER_H

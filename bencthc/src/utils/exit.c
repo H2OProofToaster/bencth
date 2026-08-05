@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void die(const char* err) {
+_Noreturn void die(const char* err) {
 
   fprintf(stderr, "%s", err);
   exit(-1);

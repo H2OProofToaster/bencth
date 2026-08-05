@@ -26,8 +26,6 @@ int main() {
 
   const Scanner* scanner = scan("bencthc/tests/return67.c");
 
-  //printTokens(scanner);
-
   const Parser* parser = parse(scanner);
 
   printProgram(parser->program);

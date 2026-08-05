@@ -29,7 +29,7 @@ Token* advance() {
   return t;
 }
 
-int check(const enum TokenType type) {
+int check(const TokenType type) {
 
   return peek()->type == type;
 }
@@ -53,7 +53,7 @@ int isType(const Token* t) {
   }
 }
 
-Token* consume(const enum TokenType type, const char* err) {
+Token* consume(const TokenType type, const char* err) {
 
   if (check(type)) { return advance(); }
 
@@ -69,10 +69,23 @@ SymbolTable* initSymbolTable(SymbolTable* outer) {
   return sT;
 }
 
+int isDefined(const SymbolTable* sT, const char* name) {
+
+  for (const Symbol* s = sT->head; s != NULL; s = s->next) {
+
+    if (b_strcmp(s->token->literal.b_string, name) == 0) { return 1; }
+  }
+
+  return 0;
+}
+
 void addSymbol(SymbolTable* sT, Token* token) {
+
+  if (isDefined(sT, token->literal.b_string)) { die("Symbol already exists"); }
 
   Symbol* s = b_alloc(parserArena, sizeof(Symbol));
   s->token = token;
+  s->next = NULL;
 
   //insert into ll
   if (sT->head == NULL) { sT->head = s; }
@@ -186,12 +199,11 @@ Stmt* parseDeclarationStmt(SymbolTable* sT) {
   curr->type = STMT_DECL;
 
   consume(INT, "expected 'int'");
+  curr->declStmt.type = INT;
   curr->declStmt.identifier = consume(IDENTIFIER, "expected variable name")->literal.b_string;
 
-  if (check(EQUALS)) {
-
-    curr->declStmt.expr = parseExpr(sT);
-  }
+  if (check(EQUALS)) { curr->declStmt.expr = parseExpr(sT); }
+  else { curr->declStmt.expr = NULL; }
 
   consume(SEMICOLON, "expected ';' after variable declaration");
   return curr;
@@ -213,16 +225,11 @@ Stmt* parseStmt(SymbolTable* sT) {
   switch (peek()->type) {
 
     case RETURN: return parseReturnStmt(sT);
-    case IDENTIFIER:
-      consume(EQUALS, "expected '=' after variable");
-      return parseExpressionStmt(sT);
+    case IDENTIFIER: return parseExpressionStmt(sT);
 
     default:
 
-      if (isType(peek())) {
-
-        return parseDeclarationStmt(sT);
-      }
+      if (isType(peek())) { return parseDeclarationStmt(sT); }
 
       die("expected statement");
       return NULL;
@@ -234,7 +241,10 @@ Function* parseFunction(SymbolTable* sT) {
   Function* curr = b_alloc(parserArena, sizeof(Function));
   curr->stmts = b_alloc(parserArena, sizeof(Stmt*) * (p->count - p->current));
   curr->count = 0;
+
   SymbolTable* innerST = initSymbolTable(sT);
+  curr->symbolTable = innerST;
+  innerST->outerScope = sT;
 
   consume(INT, "expected return type of 'int'");
   Token* t = consume(IDENTIFIER, "expected function name");
@@ -275,9 +285,9 @@ Parser* parse(const Scanner* s) {
   p->count = s->count;
   p->current = 0;
 
-  p->symbolTable = initSymbolTable(NULL);
+  p->program->symbolTable = initSymbolTable(NULL);
 
-  p->program = parseProgram(p->symbolTable);
+  p->program = parseProgram(p->program->symbolTable);
 
   //check that entry is called main
   if (b_strcmp(p->program->function->identifier, "main") != 0) { die("entry function not called main"); }

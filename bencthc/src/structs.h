@@ -12,7 +12,7 @@ typedef long unsigned int size_t;
 //first used in scanning/lexing
 
 //logical value that a token can have
-enum TokenType{
+typedef enum {
 
   //single characters
   EQUALS, PLUS, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
@@ -22,13 +22,13 @@ enum TokenType{
   FORWARD_SLASH, DOUBLE_FORWARD_SLASH,
 
   //literals
-  IDENTIFIER, INTEGER, STRING, TYPE,
+  IDENTIFIER, INTEGER, STRING,
 
   //keywords
   RETURN, INT,
 
   B_EOF,
-};
+} TokenType;
 
 //holds operable literals for tokens
 //i.e. the actual int you can pull from, or the string
@@ -56,14 +56,14 @@ typedef struct {
   //------------------------------
   //below is handled in consumeX()
 
-  enum TokenType type;
+  TokenType type;
 
   //encodes token from buffer with pointer to location, and length
   char* lexeme;
   size_t length;
 
   //this should be guaranteed to exist
-  //value for numbers and strings/chars, null terminated if it's a string (locked af)
+  //value for numbers, strings, chars, and identifiers, null terminated if it's a string (locked af)
   Literal literal;
 
 } Token;
@@ -92,7 +92,7 @@ typedef struct {
 
   const char* keyword;
   size_t length;
-  enum TokenType type;
+  TokenType type;
 
 } Keyword;
 
@@ -104,13 +104,29 @@ static const Keyword keywords[] = {
 
 //first used in parsing
 
+//symbols for lookup, stored in a linked list
+//ik, but we aren't really caring about lookup time right now
+typedef struct Symbol {
+
+  Token* token;
+  struct Symbol* next;
+
+  int offset; //filled in at codegen for stack lookup
+} Symbol;
+typedef struct SymbolTable{
+
+  Symbol* head;
+
+  struct SymbolTable* outerScope;
+} SymbolTable;
+
 //encoding the grammar
 typedef enum { EXPR_BINARY, EXPR_UNARY, EXPR_LITERAL, EXPR_VARIABLE, EXPR_GROUPING, EXPR_ASSIGN } ExprType;
 typedef struct Expr {
   ExprType type;
   union {
-    struct { struct Expr* left; enum TokenType operator; struct Expr* right; } binary;
-    struct { enum TokenType op; struct Expr* operand; } unary;
+    struct { struct Expr* left; TokenType operator; struct Expr* right; } binary;
+    struct { TokenType op; struct Expr* operand; } unary;
     struct { int value; } literal;
     struct { char* name; } variable;
     struct { struct Expr* inner; } grouping;
@@ -126,8 +142,8 @@ typedef struct {
   union {
 
     struct { Expr* expr; } returnStmt;
-    struct { Expr* expr; } exprStmt;
-    struct { char* identifier; Expr* expr; } declStmt;
+    struct { char* identifier; Expr* expr; } exprStmt;
+    struct { TokenType type; char* identifier; Expr* expr; } declStmt;
   };
 } Stmt;
 
@@ -136,28 +152,16 @@ typedef struct {
   char* identifier;
   Stmt** stmts;
   size_t count;
+
+  SymbolTable* symbolTable;
 } Function;
 
 typedef struct {
 
   Function* function;
+
+  SymbolTable* symbolTable;
 } Program;
-
-//symbols for lookup, stored in a linked list
-//ik, but we aren't really caring about lookup time right no
-typedef struct Symbol {
-
-  Token* token;
-  struct Symbol* next;
-
-  int offset; //filled in at codegen for stack lookup
-} Symbol;
-typedef struct SymbolTable{
-
-  Symbol* head;
-
-  struct SymbolTable* outerScope;
-} SymbolTable;
 
 typedef struct {
 
@@ -173,9 +177,6 @@ typedef struct {
 
   //head of ast
   Program* program;
-
-  //symbol table
-  SymbolTable* symbolTable;
 } Parser;
 
 #endif //BENCTH_STRUCTS_H

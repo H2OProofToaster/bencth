@@ -57,7 +57,7 @@ void checkKeyword(Token* t) {
 //they should be pretty self-explanatory
 //don't hate on the spacing here, it's ORGANIZED
 
-void consumeSingle(Scanner* s, const enum TokenType type, char* c) {
+void consumeSingle(Scanner* s, const TokenType type, char* c) {
 
   Token* t = addToken(s);
 
@@ -70,7 +70,7 @@ void consumeSingle(Scanner* s, const enum TokenType type, char* c) {
   t->literal.b_char = *c;
 }
 
-void consumeDouble(Scanner* s, const enum TokenType type, char* c) {
+void consumeDouble(Scanner* s, const TokenType type, char* c) {
 
   Token* t = addToken(s);
 
@@ -162,7 +162,6 @@ void consumeString(Scanner* s, char* c) {
 void scanToken(Scanner* s) {
 
   char* c = advance(s);
-  Token* t;
 
   switch (*c) {
 

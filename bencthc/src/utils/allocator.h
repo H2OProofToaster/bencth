@@ -5,10 +5,8 @@
 #ifndef BENCTH_ALLOCATOR_H
 #define BENCTH_ALLOCATOR_H
 
-typedef
-long unsigned int size_t;
+#include "iHateLibC.h"
 
-#define NULL ((void*)0)
 #define ARENA_SIZE (64 * 1024 * 1024)
 
 typedef struct {

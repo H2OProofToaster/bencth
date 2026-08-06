@@ -26,6 +26,15 @@ int b_fopenWrite(const char* path) {
 
 int b_fclose(const int fd) {
 
+  int status = 3;
+  asm volatile (
+
+    "syscall"
+    : "+a" (status)
+    : "D" (fd)
+    : "%rcx", "%r11"
+  );
+
   return close(fd);
 }
 

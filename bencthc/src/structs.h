@@ -6,8 +6,7 @@
 #define BENCTH_STRUCTS_H
 
 #include "utils/allocator.h"
-
-typedef long unsigned int size_t;
+#include "utils/iHateLibC.h"
 
 //first used in scanning/lexing
 

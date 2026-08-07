@@ -4,8 +4,9 @@
 
 #include "allocator.h"
 
-#include <stdlib.h>
 #include "exit.h"
+#include "iHateLibC.h"
+#include "syscalls/syscall.h"
 
 Arena* b_allocArena() {
 
@@ -14,10 +15,11 @@ Arena* b_allocArena() {
 
 Arena* b_allocArenaSize(const size_t size) {
 
-  Arena* a = malloc(size);
+  //fd and offset are ignored for NULL addr
+  Arena* a = b_syscall_mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-  //check malloc fail
-  if (a == NULL) { die("malloc crash"); }
+  //check mmap fail
+  if (a == (void*)-1) { die("could not allocate memory"); }
 
   a->curr = 0;
   a->cap = size - sizeof(Arena);
@@ -27,8 +29,8 @@ Arena* b_allocArenaSize(const size_t size) {
 
 void* b_alloc(Arena* a, size_t size) {
 
-  //round size to avoid shenanigans
-  size = (size + 7) & ~7;
+  //round size to nearest byte to avoid shenanigans
+  size = size + 7 & ~7;
 
   //check for overflow
   if (a->cap < a->curr + size) { die("arena overflow"); }
@@ -42,5 +44,5 @@ void* b_alloc(Arena* a, size_t size) {
 
 void b_free(Arena* a) {
 
-  free(a);
+  b_syscall_munmap(a, a->cap + sizeof(Arena));
 }

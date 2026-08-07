@@ -7,26 +7,27 @@
 #include "utils/exit.h"
 #include "utils/allocator.h"
 #include "utils/string.h"
+#include "utils/syscalls/syscall.h"
 #include "structs.h"
 #include "scanner.h"
 #include "parser.h"
 #include "codeGenerator.h"
 
-int main(int argc, char** argv) {
+int main(const int argc, char** argv) {
 
-  int f;
-  char* name = NULL;
+  int fd;
+  const char* name = NULL;
 
   switch (argc) {
 
     //no name specified, just use a.s
     case 2:
-      f = b_fopenRead(argv[1]);
+      fd = b_fopenRead(argv[1]);
       break;
 
     //pass name to codegen
     case 4:
-      f = b_fopenRead(argv[1]);
+      fd = b_fopenRead(argv[1]);
 
       if ( b_strcmp(argv[2], "-o") != 0 ) { die("missing '-o'"); }
       name = argv[3];
@@ -37,15 +38,18 @@ int main(int argc, char** argv) {
       die("incorrect structuring of arguments");
   }
 
-  if (f < 0) { die("could not open file"); }
+  if (fd < 0) { die("could not open file"); }
 
-  Arena* data = b_fread(f);
+  Arena* data = b_fread(fd);
   if (data == NULL) { die("could not read file"); }
 
   b_printString((char*)data + sizeof(Arena));
   b_free(data);
 
-  const Scanner* scanner = scan(f);
+  //reset offset
+  b_syscall_lseek(fd, 0, SEEK_SET);
+
+  const Scanner* scanner = scan(fd);
 
   const Parser* parser = parse(scanner);
 

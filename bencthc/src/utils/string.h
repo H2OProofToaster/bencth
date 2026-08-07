@@ -8,12 +8,6 @@
 #include "../structs.h"
 #include "allocator.h"
 
-//integers *are* 32 bit so should die on overflow
-#define INT_TO_STRING_SIZE 32
-
-typedef
-long unsigned int size_t;
-
 void b_lexemeToLiteral(Token* t);
 size_t b_strlen(const char* data);
 int b_strcmp(const char* a, const char* b);

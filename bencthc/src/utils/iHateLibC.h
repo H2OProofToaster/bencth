@@ -6,10 +6,13 @@
 #define BENCTH_IHATELIBC_H
 
 typedef
-long unsigned int size_t;
+unsigned long size_t;
 
 typedef
-long int ssize_t;
+long ssize_t;
+
+//integers *are* 32 bit so should die on overflow
+#define INT_TO_STRING_SIZE 32
 
 #define NULL ((void*)0)
 

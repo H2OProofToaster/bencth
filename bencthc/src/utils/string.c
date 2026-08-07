@@ -3,7 +3,8 @@
 //
 
 #include "string.h"
-#include "bencthc/src/utils/allocator.h"
+
+#include "allocator.h"
 #include "bencthc/src/scanner.h"
 
 void b_lexemeToLiteral(Token* t) {

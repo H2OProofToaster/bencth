@@ -16,6 +16,7 @@ typedef enum {
   //single characters
   EQUALS, PLUS, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
   SEMICOLON, MINUS, STAR,
+  EXCLAMATION, TILDE, PERCENT, AMPERSAND,
 
   //single OR double characters
   FORWARD_SLASH, DOUBLE_FORWARD_SLASH,
@@ -120,47 +121,247 @@ typedef struct SymbolTable{
 } SymbolTable;
 
 //encoding the grammar
-typedef enum { EXPR_BINARY, EXPR_UNARY, EXPR_LITERAL, EXPR_VARIABLE, EXPR_GROUPING, EXPR_ASSIGN } ExprType;
-typedef struct Expr {
-  ExprType type;
-  union {
-    struct { struct Expr* left; TokenType operator; struct Expr* right; } binary;
-    struct { TokenType op; struct Expr* operand; } unary;
-    struct { int value; } literal;
-    struct { char* name; } variable;
-    struct { struct Expr* inner; } grouping;
-    struct { char* name; struct Expr* expr; } assign;
-  };
-} Expr;
 
-typedef enum { STMT_RETURN, STMT_EXPR, STMT_DECL } StmtType;
-typedef struct {
-
-  StmtType type;
-
-  union {
-
-    struct { Expr* expr; } returnStmt;
-    struct { char* identifier; Expr* expr; } exprStmt;
-    struct { TokenType type; char* identifier; Expr* expr; } declStmt;
-  };
-} Stmt;
-
+//A.1.4 Constants
 typedef struct {
 
   char* identifier;
-  Stmt** stmts;
-  size_t count;
+} Identifier;
 
-  SymbolTable* symbolTable;
-} Function;
+typedef enum { INTEGER_DECIMAL_CONSTANT } IntegerConstantType;
+typedef struct {
+
+  //There isn't any differing storage needed for decimal/octal/hexadecimal constants
+
+  IntegerConstantType type;
+  int value;
+} IntegerConstant;
+
+typedef enum { CONSTANT_INTEGER } ConstantType;
+typedef struct {
+
+  ConstantType type;
+  union {
+    struct { IntegerConstant* integerConstant; } integerConstant;
+  };
+} Constant;
+
+//A.2.1 Expressions
+typedef enum { PRIMARY_IDENTIFIER, PRIMARY_CONSTANT, PRIMARY_EXPRESSION } PrimaryExpressionType;
+typedef struct {
+
+  PrimaryExpressionType type;
+  union {
+    struct { Identifier* identifier; } identifier;
+    struct { Constant* constant; } constant;
+    struct { struct Expression* expression; } expression;
+  };
+} PrimaryExpression;
+
+typedef enum { UNARY_PRIMARY, UNARY_OPERATOR } UnaryExpressionType;
+typedef struct {
+
+  UnaryExpressionType type;
+  union {
+    struct { PrimaryExpression* primaryExpression; } primaryExpression;
+    struct { TokenType operator; struct UnaryExpression* unaryExpression; } operator;
+  };
+} UnaryExpression;
+
+typedef enum { MULTIPLICATIVE_UNARY, MULTIPLICATIVE_OPERATOR } MultiplicativeExpressionType;
+typedef struct {
+
+  MultiplicativeExpressionType type;
+  union {
+    struct { UnaryExpression* unaryExpression; } unaryExpression;
+    struct { struct MultiplicativeExpression* multiplicativeExpression; TokenType operator; UnaryExpression* unaryExpression; } operator;
+  };
+} MultiplicativeExpression;
+
+typedef enum { ADDITIVE_MULTIPLICATIVE, ADDITIVE_OPERATOR } AdditiveExpressionType;
+typedef struct {
+
+  AdditiveExpressionType type;
+  union {
+    struct { MultiplicativeExpression* multiplicativeExpression; } multiplicativeExpression;
+    struct { struct AdditiveExpression* additiveExpression; TokenType operator; MultiplicativeExpression* multiplicativeExpression; } operator;
+  };
+} AdditiveExpression;
+
+typedef enum { ASSIGNMENT_ADDITIVE, ASSIGNMENT_OPERATOR } AssignmentExpressionType;
+typedef struct {
+
+  AssignmentExpressionType type;
+  union {
+    struct { AdditiveExpression* additiveExpression; } additiveExpression;
+    struct { struct UnaryExpression* unaryExpression; TokenType operator; struct AssignmentExpression* assignmentExpression; } operator;
+  };
+} AssignmentExpression;
+
+typedef enum { EXPRESSION_ASSIGNMENT, EXPRESSION_LIST } ExpressionType;
+typedef struct Expression {
+
+  ExpressionType type;
+  union {
+    struct { AssignmentExpression* assignmentExpression; } assignmentExpression;
+    struct { struct Expression* expression; AssignmentExpression* assignmentExpression; } expressionList;
+  };
+} Expression;
+
+//A.2.2 Declarations
+typedef struct {
+
+  struct DeclarationSpecifiers* declarationSpecifiers;
+  struct InitDeclaratorList* initDeclaratorList;
+} Declaration;
 
 typedef struct {
 
-  Function* function;
+  struct TypeSpecifier* typeSpecifier;
+  struct DeclarationSpecifiers* declarationSpecifiers;
+} DeclarationSpecifiers;
+
+typedef struct {
+
+  struct InitDeclarator* initDeclarator;
+  struct InitDeclaratorList* initDeclaratorList; //comma separated
+} InitDeclaratorList;
+
+typedef struct {
+
+  struct Declarator* declarator;
+  struct Initializer* initializer;
+} InitDeclarator;
+
+typedef struct {
+
+  TokenType type;
+} TypeSpecifier;
+
+typedef struct {
+
+  struct DirectDeclarator* directDeclarator;
+} Declarator;
+
+typedef enum { DIRECT_DECLARATOR_IDENTIFIER, DIRECT_DECLARATOR_DECLARATOR, DIRECT_DECLARATOR_PARAMETER_TYPE_LIST, DIRECT_DECLARATOR_IDENTIFIER_LIST } DirectDeclaratorType;
+typedef struct {
+
+  DirectDeclaratorType type;
+  union {
+    struct { Identifier* identifier; } identifier;
+    struct { Declarator* declarator; } declarator;
+    struct { struct DirectDeclarator* directDeclarator; struct ParameterTypeList* parameterTypeList; } parameterTypeList;
+    struct { struct DirectDeclarator* directDeclarator; struct IdentifierList* identifierList; } identifierList;
+  };
+} DirectDeclarator;
+
+typedef enum { PARAMETER_TYPE_LIST_PARAMETER_LIST, PARAMETER_TYPE_LIST_ELLIPSIS } ParameterTypeListType;
+typedef struct {
+
+  ParameterTypeListType type;
+  struct ParameterList* parameterList;
+} ParameterTypeList;
+
+typedef struct {
+
+  struct ParameterList* parameterList;
+  struct ParameterDeclaration* parameterDeclaration;
+} ParameterList;
+
+typedef struct {
+
+  DeclarationSpecifiers* declarationSpecifiers;
+  Declarator* declarator;
+} ParameterDeclaration;
+
+typedef struct {
+
+  struct IdentifierList* identifierList;
+  Identifier* identifier;
+} IdentifierList;
+
+typedef enum { INITIALIZER_ASSIGNMENT, INITIALIZER_INITIALIZER_LIST } InitializerType;
+typedef struct {
+
+  InitializerType type;
+  union {
+    struct { AssignmentExpression* assignmentExpression; } assignment;
+    struct { struct InitializerList* initializerList; } initializerList;
+  };
+} Initializer;
+
+typedef struct {
+
+  struct InitializerList* initializerList;
+  Initializer* initializer;
+} InitializerList;
+
+//A.2.3 Statements
+typedef enum { STATEMENT_COMPOUND, STATEMENT_EXPRESSION, STATEMENT_JUMP } StatementType;
+typedef struct {
+
+  StatementType type;
+  union {
+    struct { struct CompoundStatement* compoundStatement; } compound;
+    struct { struct ExpressionStatement* expressionStatement; } expression;
+    struct { struct JumpStatement* jumpStatement; } jump;
+  };
+} Statement;
+
+typedef struct {
+
+  struct DeclarationList* declarationList;
+  struct StatementList* statementList;
+} CompoundStatement;
+
+typedef struct {
+
+  struct DeclarationList* declarationList;
+  Declaration* declaration;
+} DeclarationList;
+
+typedef struct {
+
+  struct StatementList* statementList;
+  Statement* statement;
+} StatementList;
+
+typedef struct {
+
+  Expression* expression;
+} ExpressionStatement;
+
+typedef enum { JUMP_RETURN } JumpStatementType;
+typedef struct {
+
+  JumpStatementType type;
+  union {
+    struct { Expression* expression; } b_return;
+  };
+} JumpStatement;
+
+//A.2.4 External Definitions
+typedef struct {
+
+  struct ExternalDeclaration* externalDeclaration;
 
   SymbolTable* symbolTable;
-} Program;
+} TranslationUnit;
+
+typedef struct {
+
+  struct FunctionDefinition* functionDefinition;
+} ExternalDeclaration;
+
+typedef struct {
+
+  DeclarationSpecifiers* declarationSpecifiers;
+  Declarator* declarator;
+  DeclarationList* declarationList;
+  CompoundStatement* compoundStatement;
+
+  SymbolTable* symbolTable;
+} FunctionDefinition;
 
 typedef struct {
 
@@ -175,7 +376,7 @@ typedef struct {
   size_t current;
 
   //head of ast
-  Program* program;
+  TranslationUnit* program;
 } Parser;
 
 #endif //BENCTH_STRUCTS_H

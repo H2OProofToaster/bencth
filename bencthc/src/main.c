@@ -10,7 +10,7 @@
 #include "utils/syscalls/syscall.h"
 #include "structs.h"
 #include "scanner.h"
-#include "parser.h"
+#include "blindParser.h"
 #include "codeGenerator.h"
 
 int main(const int argc, char** argv) {
@@ -29,7 +29,7 @@ int main(const int argc, char** argv) {
     case 4:
       fd = b_fopenRead(argv[1]);
 
-      if ( b_strcmp(argv[2], "-o") != 0 ) { die("missing '-o'"); }
+      if ( b_strcmp(argv[2], "-o") != 0 ) { die("missing '-o' flag for output file name"); }
       name = argv[3];
       break;
 

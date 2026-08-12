@@ -86,6 +86,23 @@ void consumeDouble(Scanner* s, const TokenType type, char* c) {
   t->literal.b_string[2] = '\0';
 }
 
+void consumeTriple(Scanner* s, const TokenType type, char* c) {
+
+  Token* t = addToken(s);
+
+  t->type = type;
+
+  t->lexeme = c;
+
+  t->length = 3;
+
+  t->literal.b_string = b_alloc(s->a, 4);
+  t->literal.b_string[0] = *c;
+  t->literal.b_string[1] = *s_advance(s);
+  t->literal.b_string[2] = *s_advance(s);
+  t->literal.b_string[3] = '\0';
+}
+
 void consumeNumber(Scanner* s, char* c) {
 
   Token* t = addToken(s);
@@ -175,6 +192,11 @@ void scanToken(Scanner* s) {
     case ';': consumeSingle(s, SEMICOLON, c); break;
     case '-': consumeSingle(s, MINUS, c); break;
     case '*': consumeSingle(s, STAR, c); break;
+    case '!': consumeSingle(s, EXCLAMATION, c); break;
+    case '~': consumeSingle(s, TILDE, c); break;
+    case '%': consumeSingle(s, PERCENT, c); break;
+    case '&': consumeSingle(s, AMPERSAND, c); break;
+    case ',': consumeSingle(s, COMMA, c); break;
 
     //single OR double characters
 
@@ -195,6 +217,9 @@ void scanToken(Scanner* s) {
       //division
       else { consumeSingle(s, FORWARD_SLASH, c); }
       break;
+
+    //single OR triple characters
+    case '.': consumeTriple(s, ELLIPSIS, c); break;
 
     //string literals
     case '"': consumeString(s, c); break;

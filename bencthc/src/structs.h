@@ -16,10 +16,13 @@ typedef enum {
   //single characters
   EQUALS, PLUS, LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
   SEMICOLON, MINUS, STAR,
-  EXCLAMATION, TILDE, PERCENT, AMPERSAND,
+  EXCLAMATION, TILDE, PERCENT, AMPERSAND, COMMA,
 
   //single OR double characters
   FORWARD_SLASH, DOUBLE_FORWARD_SLASH,
+
+  //single OR triple characters
+  ELLIPSIS,
 
   //literals
   IDENTIFIER, INTEGER, STRING,
@@ -159,7 +162,7 @@ typedef struct {
 } PrimaryExpression;
 
 typedef enum { UNARY_PRIMARY, UNARY_OPERATOR } UnaryExpressionType;
-typedef struct {
+typedef struct UnaryExpression {
 
   UnaryExpressionType type;
   union {
@@ -169,7 +172,7 @@ typedef struct {
 } UnaryExpression;
 
 typedef enum { MULTIPLICATIVE_UNARY, MULTIPLICATIVE_OPERATOR } MultiplicativeExpressionType;
-typedef struct {
+typedef struct MultiplicativeExpression {
 
   MultiplicativeExpressionType type;
   union {
@@ -179,7 +182,7 @@ typedef struct {
 } MultiplicativeExpression;
 
 typedef enum { ADDITIVE_MULTIPLICATIVE, ADDITIVE_OPERATOR } AdditiveExpressionType;
-typedef struct {
+typedef struct AdditiveExpression {
 
   AdditiveExpressionType type;
   union {
@@ -189,7 +192,7 @@ typedef struct {
 } AdditiveExpression;
 
 typedef enum { ASSIGNMENT_ADDITIVE, ASSIGNMENT_OPERATOR } AssignmentExpressionType;
-typedef struct {
+typedef struct AssignmentExpression {
 
   AssignmentExpressionType type;
   union {
@@ -215,36 +218,36 @@ typedef struct {
   struct InitDeclaratorList* initDeclaratorList;
 } Declaration;
 
-typedef struct {
+typedef struct DeclarationSpecifiers {
 
   struct TypeSpecifier* typeSpecifier;
   struct DeclarationSpecifiers* declarationSpecifiers;
 } DeclarationSpecifiers;
 
-typedef struct {
+typedef struct InitDeclaratorList {
 
   struct InitDeclarator* initDeclarator;
-  struct InitDeclaratorList* initDeclaratorList; //comma separated
+  struct InitDeclaratorList* initDeclaratorList; //comma separated, with an optional trailing comma, i.e. { 1, 2, 3, }
 } InitDeclaratorList;
 
-typedef struct {
+typedef struct InitDeclarator {
 
   struct Declarator* declarator;
   struct Initializer* initializer;
 } InitDeclarator;
 
-typedef struct {
+typedef struct TypeSpecifier {
 
   TokenType type;
 } TypeSpecifier;
 
-typedef struct {
+typedef struct Declarator {
 
   struct DirectDeclarator* directDeclarator;
 } Declarator;
 
-typedef enum { DIRECT_DECLARATOR_IDENTIFIER, DIRECT_DECLARATOR_DECLARATOR, DIRECT_DECLARATOR_PARAMETER_TYPE_LIST, DIRECT_DECLARATOR_IDENTIFIER_LIST } DirectDeclaratorType;
-typedef struct {
+typedef enum { DIRECT_DECLARATOR_IDENTIFIER, DIRECT_DECLARATOR_DECLARATOR, DIRECT_DECLARATOR_PARAMETER_TYPE_LIST, DIRECT_DECLARATOR_IDENTIFIER_LIST, DIRECT_DECLARATOR_EMPTY_IDENTIFIER_LIST } DirectDeclaratorType;
+typedef struct DirectDeclarator {
 
   DirectDeclaratorType type;
   union {
@@ -256,32 +259,32 @@ typedef struct {
 } DirectDeclarator;
 
 typedef enum { PARAMETER_TYPE_LIST_PARAMETER_LIST, PARAMETER_TYPE_LIST_ELLIPSIS } ParameterTypeListType;
-typedef struct {
+typedef struct ParameterTypeList {
 
   ParameterTypeListType type;
   struct ParameterList* parameterList;
 } ParameterTypeList;
 
-typedef struct {
+typedef struct ParameterList {
 
   struct ParameterList* parameterList;
   struct ParameterDeclaration* parameterDeclaration;
 } ParameterList;
 
-typedef struct {
+typedef struct ParameterDeclaration {
 
   DeclarationSpecifiers* declarationSpecifiers;
   Declarator* declarator;
 } ParameterDeclaration;
 
-typedef struct {
+typedef struct IdentifierList {
 
   struct IdentifierList* identifierList;
   Identifier* identifier;
 } IdentifierList;
 
 typedef enum { INITIALIZER_ASSIGNMENT, INITIALIZER_INITIALIZER_LIST } InitializerType;
-typedef struct {
+typedef struct Initializer {
 
   InitializerType type;
   union {
@@ -290,7 +293,7 @@ typedef struct {
   };
 } Initializer;
 
-typedef struct {
+typedef struct InitializerList {
 
   struct InitializerList* initializerList;
   Initializer* initializer;
@@ -308,31 +311,31 @@ typedef struct {
   };
 } Statement;
 
-typedef struct {
+typedef struct CompoundStatement {
 
   struct DeclarationList* declarationList;
   struct StatementList* statementList;
 } CompoundStatement;
 
-typedef struct {
+typedef struct DeclarationList {
 
   struct DeclarationList* declarationList;
   Declaration* declaration;
 } DeclarationList;
 
-typedef struct {
+typedef struct StatementList {
 
   struct StatementList* statementList;
   Statement* statement;
 } StatementList;
 
-typedef struct {
+typedef struct ExpressionStatement {
 
   Expression* expression;
 } ExpressionStatement;
 
 typedef enum { JUMP_RETURN } JumpStatementType;
-typedef struct {
+typedef struct JumpStatement {
 
   JumpStatementType type;
   union {
@@ -348,12 +351,12 @@ typedef struct {
   SymbolTable* symbolTable;
 } TranslationUnit;
 
-typedef struct {
+typedef struct ExternalDeclaration {
 
   struct FunctionDefinition* functionDefinition;
 } ExternalDeclaration;
 
-typedef struct {
+typedef struct FunctionDefinition {
 
   DeclarationSpecifiers* declarationSpecifiers;
   Declarator* declarator;

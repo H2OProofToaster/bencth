@@ -35,16 +35,21 @@ ExternalDeclaration* parseExternalDeclaration();
 FunctionDefinition* parseFunctionDefinition();
 
 //helpers for tokenstream
-Token* p_peek() {
+Token* p_lookN(const size_t n) {
 
   if (p->current >= p->count) { die("end of tokenstream"); }
 
-  return &p->tokens[p->current];
+  return &p->tokens[p->current + n - 1];
+}
+
+Token* p_peek() {
+
+  return p_lookN(1);
 }
 
 Token* p_peekNext() {
 
-  return &p->tokens[p->current + 1];
+  return p_lookN(2);
 }
 
 Token* p_advance() {
@@ -75,17 +80,7 @@ int isTypeSpecifier() {
 
 int isDirectDeclarator() {
 
-  size_t i = p->current;
-  Token* curr = &p->tokens[i];
-
-  while (curr->type != IDENTIFIER && curr->type != LEFT_PAREN) {
-
-    if (i >= p->count - 1) { return 0; }
-
-    curr = &p->tokens[++i];
-  }
-
-  return 1;
+  return p_peek()->type == IDENTIFIER || p_peek()->type == LEFT_PAREN;
 }
 
 int isDeclarator() {
@@ -320,80 +315,93 @@ UnaryExpression* parseUnaryExpression() {
 
 MultiplicativeExpression* parseMultiplicativeExpression() {
 
-  MultiplicativeExpression* curr = b_alloc(parserArena, sizeof(MultiplicativeExpression));
-  switch (p_peekNext()->type) {
+  MultiplicativeExpression* left = b_alloc(parserArena, sizeof(MultiplicativeExpression));
+  left->type = MULTIPLICATIVE_UNARY;
+  left->unaryExpression.unaryExpression = parseUnaryExpression();
 
-    case STAR:
-    case FORWARD_SLASH:
-      curr->type = MULTIPLICATIVE_OPERATOR;
-      curr->operator.multiplicativeExpression = parseMultiplicativeExpression();
-      curr->operator.operator = p_advance()->type;
-      curr->operator.unaryExpression = parseUnaryExpression();
-      return curr;
+  while (p_peek()->type == STAR || p_peek()->type == FORWARD_SLASH) {
 
-    default:
-      curr->type = MULTIPLICATIVE_UNARY;
-      curr->unaryExpression.unaryExpression = parseUnaryExpression();
-      return curr;
+    const TokenType operator = p_advance()->type; //eat operator
+    UnaryExpression* right = parseUnaryExpression();
+
+    MultiplicativeExpression* new = b_alloc(parserArena, sizeof(MultiplicativeExpression));
+    new->type = MULTIPLICATIVE_OPERATOR;
+    new->operator.multiplicativeExpression = left;
+    new->operator.operator = operator;
+    new->operator.unaryExpression = right;
+
+    left = new;
   }
+
+  return left;
 }
 
 AdditiveExpression* parseAdditiveExpression() {
 
-  AdditiveExpression* curr = b_alloc(parserArena, sizeof(AdditiveExpression));
-  switch (p_peekNext()->type) {
+  AdditiveExpression* left = b_alloc(parserArena, sizeof(AdditiveExpression));
+  left->type = ADDITIVE_MULTIPLICATIVE;
+  left->multiplicativeExpression.multiplicativeExpression = parseMultiplicativeExpression();
 
-    case PLUS:
-    case MINUS:
-      curr->type = ADDITIVE_OPERATOR;
-      curr->operator.additiveExpression = parseAdditiveExpression();
-      curr->operator.operator = p_advance()->type;
-      curr->operator.multiplicativeExpression = parseMultiplicativeExpression();
-      return curr;
+  while (p_peek()->type == PLUS || p_peek()->type == MINUS) {
 
-    default:
-      curr->type = ADDITIVE_MULTIPLICATIVE;
-      curr->multiplicativeExpression.multiplicativeExpression = parseMultiplicativeExpression();
-      return curr;
+    const TokenType operator = p_advance()->type; //eat operator
+    MultiplicativeExpression* right = parseMultiplicativeExpression();
+
+    AdditiveExpression* new = b_alloc(parserArena, sizeof(AdditiveExpression));
+    new->type = ADDITIVE_OPERATOR;
+    new->operator.additiveExpression = left;
+    new->operator.operator = operator;
+    new->operator.multiplicativeExpression = right;
+
+    left = new;
   }
+
+  return left;
 }
 
 AssignmentExpression* parseAssignmentExpression() {
 
   AssignmentExpression* curr = b_alloc(parserArena, sizeof(AssignmentExpression));
-  switch (p_peekNext()->type) {
 
-    case EQUALS:
-      curr->type = ASSIGNMENT_OPERATOR;
-      curr->operator.unaryExpression = parseUnaryExpression();
-      curr->operator.operator = p_advance()->type;
-      curr->operator.assignmentExpression = parseAssignmentExpression();
-      return curr;
+  AdditiveExpression* left = parseAdditiveExpression(); //parse left side up to an additive expression
 
-    default:
-      curr->type = ASSIGNMENT_ADDITIVE;
-      curr->additiveExpression.additiveExpression = parseAdditiveExpression();
-      return curr;
+  if (p_peek()->type == EQUALS) {
+
+    //if equals, then left has to be unary
+    const int isValidLeft = left->type == ADDITIVE_MULTIPLICATIVE && left->multiplicativeExpression.multiplicativeExpression->type == MULTIPLICATIVE_UNARY;
+    if (!isValidLeft) { die("expected unary expression"); }
+
+    curr->type = ASSIGNMENT_OPERATOR;
+    curr->operator.unaryExpression = left->multiplicativeExpression.multiplicativeExpression->unaryExpression.unaryExpression;
+    curr->operator.operator = p_advance()->type;
+    curr->operator.assignmentExpression = parseAssignmentExpression();
+    return curr;
   }
+
+  curr->type = ASSIGNMENT_ADDITIVE;
+  curr->additiveExpression.additiveExpression = left;
+  return curr;
 }
 
 Expression* parseExpression() {
 
-  Expression* curr = b_alloc(parserArena, sizeof(Expression));
-  switch (p_peekNext()->type) {
+  Expression* left = b_alloc(parserArena, sizeof(Expression));
+  left->type = EXPRESSION_ASSIGNMENT;
+  left->assignmentExpression.assignmentExpression = parseAssignmentExpression();
 
-    case COMMA:
-      curr->type = EXPRESSION_LIST;
-      curr->expressionList.expression = parseExpression();
-      p_advance(); //eat ','
-      curr->expressionList.assignmentExpression = parseAssignmentExpression();
-      return curr;
+  while (p_peek()->type == COMMA) {
 
-    default:
-      curr->type = EXPRESSION_ASSIGNMENT;
-      curr->assignmentExpression.assignmentExpression = parseAssignmentExpression();
-      return curr;
+    p_advance(); //eat ','
+    AssignmentExpression* right = parseAssignmentExpression();
+
+    Expression* new = b_alloc(parserArena, sizeof(Expression));
+    new->type = EXPRESSION_LIST;
+    new->expressionList.expression = left;
+    new->expressionList.assignmentExpression = right;
+    left = new;
   }
+
+  return left;
 }
 
 //A.2.2 Declarations
@@ -454,47 +462,54 @@ Declarator* parseDeclarator() {
 
 DirectDeclarator* parseDirectDeclarator() {
 
-  DirectDeclarator* curr = b_alloc(parserArena, sizeof(DirectDeclarator));
+  DirectDeclarator* left = b_alloc(parserArena, sizeof(DirectDeclarator));
   switch (p_peek()->type) {
 
     case IDENTIFIER:
-      curr->type = DIRECT_DECLARATOR_IDENTIFIER;
-      curr->identifier.identifier = parseIdentifier();
+      left->type = DIRECT_DECLARATOR_IDENTIFIER;
+      left->identifier.identifier = parseIdentifier();
+      return left;
 
     case LEFT_PAREN:
-      curr->type = DIRECT_DECLARATOR_DECLARATOR;
-      curr->declarator.declarator = parseDeclarator();
+      left->type = DIRECT_DECLARATOR_DECLARATOR;
+      left->declarator.declarator = parseDeclarator();
+      p_consume(RIGHT_PAREN, "expected ')' after declarator");
+      return left;
 
     default:
-
-      if (isDirectDeclarator()) {
-
-        DirectDeclarator* temp = parseDirectDeclarator(); //I need to store this before I consume the '('
-        p_consume(LEFT_PAREN, "expected '('");
-
-        if (isParameterTypeList()) {
-
-          curr->type = DIRECT_DECLARATOR_PARAMETER_TYPE_LIST;
-          curr->parameterTypeList.directDeclarator = temp;
-          curr->parameterTypeList.parameterTypeList = parseParameterTypeList();
-        }
-
-        else if (isIdentifierList()) {
-
-          curr->type = DIRECT_DECLARATOR_IDENTIFIER_LIST;
-          curr->identifierList.directDeclarator = temp;
-          curr->identifierList.identifierList = parseIdentifierList();
-        }
-
-        else {
-
-          curr->type = DIRECT_DECLARATOR_EMPTY_IDENTIFIER_LIST;
-          curr->identifierList.directDeclarator = temp;
-        }
-      }
+      die("expected identifier or '('");
   }
 
-  return curr;
+  while (p_peek()->type == LEFT_PAREN) {
+
+    p_advance(); //eat '('
+    DirectDeclarator* curr = b_alloc(parserArena, sizeof(DirectDeclarator));
+
+    if (isParameterTypeList()) {
+
+      curr->type = DIRECT_DECLARATOR_PARAMETER_TYPE_LIST;
+      curr->parameterTypeList.parameterTypeList = parseParameterTypeList();
+      curr->parameterTypeList.directDeclarator = left;
+    }
+
+    else if (isIdentifierList()) {
+
+      curr->type = DIRECT_DECLARATOR_IDENTIFIER_LIST;
+      curr->identifierList.identifierList = parseIdentifierList();
+      curr->identifierList.directDeclarator = left;
+    }
+
+    else {
+
+      curr->type = DIRECT_DECLARATOR_EMPTY_IDENTIFIER_LIST;
+      curr->identifierList.directDeclarator = left;
+    }
+
+    p_consume(RIGHT_PAREN, "expected ')' after parameter or identifier list");
+    left = curr;
+  }
+
+  return left;
 }
 
 ParameterTypeList* parseParameterTypeList() {
@@ -516,17 +531,21 @@ ParameterTypeList* parseParameterTypeList() {
 
 ParameterList* parseParameterList() {
 
-  ParameterList* curr = b_alloc(parserArena, sizeof(ParameterList));
-  if (isParameterList()) {
+  ParameterList* left = b_alloc(parserArena, sizeof(ParameterList));
+  left->parameterDeclaration = parseParameterDeclaration();
 
-    curr->parameterList = parseParameterList();
-    p_consume(COMMA, "expected ',' after parameter list");
-    curr->parameterDeclaration = parseParameterDeclaration();
+  while (p_peek()->type == COMMA) {
+
+    p_advance(); //eat ','
+    ParameterDeclaration* right = parseParameterDeclaration();
+
+    ParameterList* new = b_alloc(parserArena, sizeof(ParameterList));
+    new->parameterList = left;
+    new->parameterDeclaration = right;
+    left = new;
   }
 
-  else { curr->parameterDeclaration = parseParameterDeclaration(); }
-
-  return curr;
+  return left;
 }
 
 ParameterDeclaration* parseParameterDeclaration() {
@@ -539,28 +558,34 @@ ParameterDeclaration* parseParameterDeclaration() {
 
 IdentifierList* parseIdentifierList() {
 
-  IdentifierList* curr = b_alloc(parserArena, sizeof(IdentifierList));
-  if (isIdentifierList()) {
+  IdentifierList* left = b_alloc(parserArena, sizeof(IdentifierList));
+  left->identifier = parseIdentifier();
 
-    curr->identifierList = parseIdentifierList();
-    p_consume(COMMA, "expected ',' after identifier list");
-    curr->identifier = parseIdentifier();
+  while (p_peek()->type == COMMA) {
+
+    p_advance(); //eat ','
+    Identifier* right = parseIdentifier();
+
+    IdentifierList* new = b_alloc(parserArena, sizeof(IdentifierList));
+    new->identifierList = left;
+    new->identifier = right;
+    left = new;
   }
 
-  else { curr->identifier = parseIdentifier(); }
-
-  return curr;
+  return left;
 }
 
 Initializer* parseInitializer() {
 
   Initializer* curr = b_alloc(parserArena, sizeof(Initializer));
 
-  if (p_peek()->type == RIGHT_BRACE) {
+  if (p_peek()->type == LEFT_BRACE) {
 
     p_advance();
     curr->type = INITIALIZER_INITIALIZER_LIST;
     curr->initializerList.initializerList = parseInitializerList();
+    if (p_peek()->type == COMMA) { p_advance(); } //eat optional trailing ','
+    p_consume(RIGHT_BRACE, "expected '}' after initializer");
   }
 
   else {
@@ -574,18 +599,21 @@ Initializer* parseInitializer() {
 
 InitializerList* parseInitializerList() {
 
-  InitializerList* curr = b_alloc(parserArena, sizeof(InitializerList));
+  InitializerList* left = b_alloc(parserArena, sizeof(InitializerList));
+  left->initializer = parseInitializer();
 
-  if (isInitializerList()) {
+  while (p_peek()->type == COMMA) {
 
-    curr->initializerList = parseInitializerList();
-    p_consume(COMMA, "expected ',' after initializer list");
-    curr->initializer = parseInitializer();
+    p_advance(); //eat ','
+    Initializer* right = parseInitializer();
+
+    InitializerList* new = b_alloc(parserArena, sizeof(InitializerList));
+    new->initializerList = left;
+    new->initializer = right;
+    left = new;
   }
 
-  else { curr->initializer = parseInitializer(); }
-
-  return curr;
+  return left;
 }
 
 //A.2.3
@@ -597,14 +625,17 @@ Statement* parseStatement() {
     case LEFT_BRACE:
       curr->type = STATEMENT_COMPOUND;
       curr->compound.compoundStatement = parseCompoundStatement();
+      return curr;
 
     case RETURN:
       curr->type = STATEMENT_JUMP;
       curr->jump.jumpStatement = parseJumpStatement();
+      return curr;
 
     case SEMICOLON:
       curr->type = STATEMENT_EXPRESSION;
       //empty expression statement
+      return curr;
 
     default:
 
@@ -630,32 +661,37 @@ CompoundStatement* parseCompoundStatement() {
 
 DeclarationList* parseDeclarationList() {
 
-  DeclarationList* curr = b_alloc(parserArena, sizeof(DeclarationList));
+  DeclarationList* left = b_alloc(parserArena, sizeof(DeclarationList));
+  left->declaration = parseDeclaration();
 
-  if (isDeclarationList()) {
+  while (isDeclaration()) {
 
-    curr->declarationList = parseDeclarationList();
-    curr->declaration = parseDeclaration();
+    Declaration* right = parseDeclaration();
+
+    DeclarationList* new = b_alloc(parserArena, sizeof(DeclarationList));
+    new->declarationList = left;
+    new->declaration = right;
+    left = new;
   }
 
-  else { curr->declaration = parseDeclaration(); }
-
-  return curr;
+  return left;
 }
 
 StatementList* parseStatementList() {
 
-  StatementList* curr = b_alloc(parserArena, sizeof(StatementList));
+  StatementList* left = b_alloc(parserArena, sizeof(StatementList));
+  left->statement = parseStatement();
 
-  if (isStatementList()) {
+  while (isStatement()) {
 
-    curr->statementList = parseStatementList();
-    curr->statement = parseStatement();
+    Statement* right = parseStatement();
+
+    StatementList* new = b_alloc(parserArena, sizeof(StatementList));
+    new->statementList = left;
+    new->statement = right;
   }
 
-  else { curr->statement = parseStatement(); }
-
-  return curr;
+  return left;
 }
 
 ExpressionStatement* parseExpressionStatement() {
@@ -677,6 +713,7 @@ JumpStatement* parseJumpStatement() {
       p_advance(); //eat 'return'
       if (isExpression()) { curr->b_return.expression = parseExpression(); }
       p_consume(SEMICOLON, "expected ';' after expression");
+      return curr;
 
     default:
       die("expected return statement");
@@ -723,6 +760,7 @@ Parser* parse(const Scanner* s) {
   p->program = parseTranslationUnit();
 
   //check that entry is called main
+  //this may kill itself soon
   if (b_strcmp(p->program->externalDeclaration->functionDefinition->declarator->directDeclarator->identifier.identifier->identifier,
                "main") != 0)
     { die("entry function not called main"); }

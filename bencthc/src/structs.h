@@ -197,7 +197,7 @@ typedef struct AssignmentExpression {
   AssignmentExpressionType type;
   union {
     struct { AdditiveExpression* additiveExpression; } additiveExpression;
-    struct { struct UnaryExpression* unaryExpression; TokenType operator; struct AssignmentExpression* assignmentExpression; } operator;
+    struct { UnaryExpression* unaryExpression; TokenType operator; struct AssignmentExpression* assignmentExpression; } operator;
   };
 } AssignmentExpression;
 

@@ -13,26 +13,26 @@ static Arena* parserArena = NULL;
 static Parser* p = NULL;
 
 //prototypes
-Expression* parseExpression();
-DeclarationSpecifiers* parseDeclarationSpecifiers();
-InitDeclaratorList* parseInitDeclaratorList();
-InitDeclarator* parseInitDeclarator();
-TypeSpecifier* parseTypeSpecifier();
-Declarator* parseDeclarator();
-DirectDeclarator* parseDirectDeclarator();
-ParameterTypeList* parseParameterTypeList();
-ParameterList* parseParameterList();
-ParameterDeclaration* parseParameterDeclaration();
-IdentifierList* parseIdentifierList();
-Initializer* parseInitializer();
-InitializerList* parseInitializerList();
-CompoundStatement* parseCompoundStatement();
-DeclarationList* parseDeclarationList();
-StatementList* parseStatementList();
-ExpressionStatement* parseExpressionStatement();
-JumpStatement* parseJumpStatement();
-ExternalDeclaration* parseExternalDeclaration();
-FunctionDefinition* parseFunctionDefinition();
+g_Expression* parseExpression();
+g_DeclarationSpecifiers* parseDeclarationSpecifiers();
+g_InitDeclaratorList* parseInitDeclaratorList();
+g_InitDeclarator* parseInitDeclarator();
+g_TypeSpecifier* parseTypeSpecifier();
+g_Declarator* parseDeclarator();
+g_DirectDeclarator* parseDirectDeclarator();
+g_ParameterTypeList* parseParameterTypeList();
+g_ParameterList* parseParameterList();
+g_ParameterDeclaration* parseParameterDeclaration();
+g_IdentifierList* parseIdentifierList();
+g_Initializer* parseInitializer();
+g_InitializerList* parseInitializerList();
+g_CompoundStatement* parseCompoundStatement();
+g_DeclarationList* parseDeclarationList();
+g_StatementList* parseStatementList();
+g_ExpressionStatement* parseExpressionStatement();
+g_JumpStatement* parseJumpStatement();
+g_ExternalDeclaration* parseExternalDeclaration();
+g_FunctionDefinition* parseFunctionDefinition();
 
 //helpers for tokenstream
 Token* p_lookN(const size_t n) {
@@ -238,35 +238,35 @@ void addSymbol(SymbolTable* sT, Token* token) {
 }
 
 //A.1.4 Constants
-Identifier* parseIdentifier() {
+g_Identifier* parseIdentifier() {
 
   const Token* t = p_consume(IDENTIFIER, "expected identifier");
-  Identifier* curr = b_alloc(parserArena, sizeof(Identifier));
+  g_Identifier* curr = b_alloc(parserArena, sizeof(g_Identifier));
   curr->identifier = t->literal.b_string;
   return curr;
 }
 
-IntegerConstant* parseIntegerConstant() {
+g_IntegerConstant* parseIntegerConstant() {
 
   const Token* t = p_consume(INTEGER, "expected integer literal");
-  IntegerConstant* curr = b_alloc(parserArena, sizeof(IntegerConstant));
+  g_IntegerConstant* curr = b_alloc(parserArena, sizeof(g_IntegerConstant));
   curr->type = INTEGER_DECIMAL_CONSTANT;
   curr->value = t->literal.b_integer;
   return curr;
 }
 
-Constant* parseConstant() {
+g_Constant* parseConstant() {
 
-  Constant* curr = b_alloc(parserArena, sizeof(Constant));
+  g_Constant* curr = b_alloc(parserArena, sizeof(g_Constant));
   curr->type = CONSTANT_INTEGER;
   curr->integerConstant.integerConstant = parseIntegerConstant();
   return curr;
 }
 
 //A.2.1 Expressions
-PrimaryExpression* parsePrimaryExpression() {
+g_PrimaryExpression* parsePrimaryExpression() {
 
-  PrimaryExpression* curr = b_alloc(parserArena, sizeof(PrimaryExpression));
+  g_PrimaryExpression* curr = b_alloc(parserArena, sizeof(g_PrimaryExpression));
   switch (p_peek()->type) {
 
     case IDENTIFIER:
@@ -291,9 +291,9 @@ PrimaryExpression* parsePrimaryExpression() {
   }
 }
 
-UnaryExpression* parseUnaryExpression() {
+g_UnaryExpression* parseUnaryExpression() {
 
-  UnaryExpression* curr = b_alloc(parserArena, sizeof(UnaryExpression));
+  g_UnaryExpression* curr = b_alloc(parserArena, sizeof(g_UnaryExpression));
   switch (p_peek()->type) {
 
     case PLUS:
@@ -313,18 +313,18 @@ UnaryExpression* parseUnaryExpression() {
   }
 }
 
-MultiplicativeExpression* parseMultiplicativeExpression() {
+g_MultiplicativeExpression* parseMultiplicativeExpression() {
 
-  MultiplicativeExpression* left = b_alloc(parserArena, sizeof(MultiplicativeExpression));
+  g_MultiplicativeExpression* left = b_alloc(parserArena, sizeof(g_MultiplicativeExpression));
   left->type = MULTIPLICATIVE_UNARY;
   left->unaryExpression.unaryExpression = parseUnaryExpression();
 
   while (p_peek()->type == STAR || p_peek()->type == FORWARD_SLASH) {
 
     const TokenType operator = p_advance()->type; //eat operator
-    UnaryExpression* right = parseUnaryExpression();
+    g_UnaryExpression* right = parseUnaryExpression();
 
-    MultiplicativeExpression* new = b_alloc(parserArena, sizeof(MultiplicativeExpression));
+    g_MultiplicativeExpression* new = b_alloc(parserArena, sizeof(g_MultiplicativeExpression));
     new->type = MULTIPLICATIVE_OPERATOR;
     new->operator.multiplicativeExpression = left;
     new->operator.operator = operator;
@@ -336,18 +336,18 @@ MultiplicativeExpression* parseMultiplicativeExpression() {
   return left;
 }
 
-AdditiveExpression* parseAdditiveExpression() {
+g_AdditiveExpression* parseAdditiveExpression() {
 
-  AdditiveExpression* left = b_alloc(parserArena, sizeof(AdditiveExpression));
+  g_AdditiveExpression* left = b_alloc(parserArena, sizeof(g_AdditiveExpression));
   left->type = ADDITIVE_MULTIPLICATIVE;
   left->multiplicativeExpression.multiplicativeExpression = parseMultiplicativeExpression();
 
   while (p_peek()->type == PLUS || p_peek()->type == MINUS) {
 
     const TokenType operator = p_advance()->type; //eat operator
-    MultiplicativeExpression* right = parseMultiplicativeExpression();
+    g_MultiplicativeExpression* right = parseMultiplicativeExpression();
 
-    AdditiveExpression* new = b_alloc(parserArena, sizeof(AdditiveExpression));
+    g_AdditiveExpression* new = b_alloc(parserArena, sizeof(g_AdditiveExpression));
     new->type = ADDITIVE_OPERATOR;
     new->operator.additiveExpression = left;
     new->operator.operator = operator;
@@ -359,11 +359,11 @@ AdditiveExpression* parseAdditiveExpression() {
   return left;
 }
 
-AssignmentExpression* parseAssignmentExpression() {
+g_AssignmentExpression* parseAssignmentExpression() {
 
-  AssignmentExpression* curr = b_alloc(parserArena, sizeof(AssignmentExpression));
+  g_AssignmentExpression* curr = b_alloc(parserArena, sizeof(g_AssignmentExpression));
 
-  AdditiveExpression* left = parseAdditiveExpression(); //parse left side up to an additive expression
+  g_AdditiveExpression* left = parseAdditiveExpression(); //parse left side up to an additive expression
 
   if (p_peek()->type == EQUALS) {
 
@@ -383,18 +383,18 @@ AssignmentExpression* parseAssignmentExpression() {
   return curr;
 }
 
-Expression* parseExpression() {
+g_Expression* parseExpression() {
 
-  Expression* left = b_alloc(parserArena, sizeof(Expression));
+  g_Expression* left = b_alloc(parserArena, sizeof(g_Expression));
   left->type = EXPRESSION_ASSIGNMENT;
   left->assignmentExpression.assignmentExpression = parseAssignmentExpression();
 
   while (p_peek()->type == COMMA) {
 
     p_advance(); //eat ','
-    AssignmentExpression* right = parseAssignmentExpression();
+    g_AssignmentExpression* right = parseAssignmentExpression();
 
-    Expression* new = b_alloc(parserArena, sizeof(Expression));
+    g_Expression* new = b_alloc(parserArena, sizeof(g_Expression));
     new->type = EXPRESSION_LIST;
     new->expressionList.expression = left;
     new->expressionList.assignmentExpression = right;
@@ -405,38 +405,38 @@ Expression* parseExpression() {
 }
 
 //A.2.2 Declarations
-Declaration* parseDeclaration() {
+g_Declaration* parseDeclaration() {
 
-  Declaration* curr = b_alloc(parserArena, sizeof(Declaration));
+  g_Declaration* curr = b_alloc(parserArena, sizeof(g_Declaration));
   curr->declarationSpecifiers = parseDeclarationSpecifiers();
   if (p_peek()->type != SEMICOLON) { curr->initDeclaratorList = parseInitDeclaratorList(); }
   p_advance(); //eat ';'
   return curr;
 }
 
-DeclarationSpecifiers* parseDeclarationSpecifiers() {
+g_DeclarationSpecifiers* parseDeclarationSpecifiers() {
 
-  DeclarationSpecifiers* curr = b_alloc(parserArena, sizeof(DeclarationSpecifiers));
+  g_DeclarationSpecifiers* curr = b_alloc(parserArena, sizeof(g_DeclarationSpecifiers));
   curr->typeSpecifier = parseTypeSpecifier();
   if (isTypeSpecifier()) { curr->declarationSpecifiers = parseDeclarationSpecifiers(); }
   return curr;
 }
 
-InitDeclaratorList* parseInitDeclaratorList() {
+g_InitDeclaratorList* parseInitDeclaratorList() {
 
   //This is weird because you need to be able to accept a trailing comma
   // { 1, 2, 3, } (the comma after the 3)
 
-  InitDeclaratorList* curr = b_alloc(parserArena, sizeof(InitDeclaratorList));
+  g_InitDeclaratorList* curr = b_alloc(parserArena, sizeof(g_InitDeclaratorList));
   curr->initDeclarator = parseInitDeclarator();
   if (p_check(COMMA)) { p_advance(); } //eat ',', but don't die if it doesn't exist (that's why I'm not using p_consume)
   if (isInitDeclarator()) { curr->initDeclaratorList = parseInitDeclaratorList(); }
   return curr;
 }
 
-InitDeclarator* parseInitDeclarator() {
+g_InitDeclarator* parseInitDeclarator() {
 
-  InitDeclarator* curr = b_alloc(parserArena, sizeof(InitDeclarator));
+  g_InitDeclarator* curr = b_alloc(parserArena, sizeof(g_InitDeclarator));
   curr->declarator = parseDeclarator();
   if (p_peek()->type == EQUALS) {
 
@@ -446,23 +446,23 @@ InitDeclarator* parseInitDeclarator() {
   return curr;
 }
 
-TypeSpecifier* parseTypeSpecifier() {
+g_TypeSpecifier* parseTypeSpecifier() {
 
-  TypeSpecifier* curr = b_alloc(parserArena, sizeof(TypeSpecifier));
+  g_TypeSpecifier* curr = b_alloc(parserArena, sizeof(g_TypeSpecifier));
   if (isTypeSpecifier()) { curr->type = p_advance()->type; }
   return curr;
 }
 
-Declarator* parseDeclarator() {
+g_Declarator* parseDeclarator() {
 
-  Declarator* curr = b_alloc(parserArena, sizeof(Declarator));
+  g_Declarator* curr = b_alloc(parserArena, sizeof(g_Declarator));
   curr->directDeclarator = parseDirectDeclarator();
   return curr;
 }
 
-DirectDeclarator* parseDirectDeclarator() {
+g_DirectDeclarator* parseDirectDeclarator() {
 
-  DirectDeclarator* left = b_alloc(parserArena, sizeof(DirectDeclarator));
+  g_DirectDeclarator* left = b_alloc(parserArena, sizeof(g_DirectDeclarator));
   switch (p_peek()->type) {
 
     case IDENTIFIER:
@@ -483,7 +483,7 @@ DirectDeclarator* parseDirectDeclarator() {
   while (p_peek()->type == LEFT_PAREN) {
 
     p_advance(); //eat '('
-    DirectDeclarator* curr = b_alloc(parserArena, sizeof(DirectDeclarator));
+    g_DirectDeclarator* curr = b_alloc(parserArena, sizeof(g_DirectDeclarator));
 
     if (isParameterTypeList()) {
 
@@ -512,9 +512,9 @@ DirectDeclarator* parseDirectDeclarator() {
   return left;
 }
 
-ParameterTypeList* parseParameterTypeList() {
+g_ParameterTypeList* parseParameterTypeList() {
 
-  ParameterTypeList* curr = b_alloc(parserArena, sizeof(ParameterTypeList));
+  g_ParameterTypeList* curr = b_alloc(parserArena, sizeof(g_ParameterTypeList));
   curr->parameterList = parseParameterList();
 
   if (p_peek()->type == COMMA) {
@@ -529,17 +529,17 @@ ParameterTypeList* parseParameterTypeList() {
   return curr;
 }
 
-ParameterList* parseParameterList() {
+g_ParameterList* parseParameterList() {
 
-  ParameterList* left = b_alloc(parserArena, sizeof(ParameterList));
+  g_ParameterList* left = b_alloc(parserArena, sizeof(g_ParameterList));
   left->parameterDeclaration = parseParameterDeclaration();
 
   while (p_peek()->type == COMMA) {
 
     p_advance(); //eat ','
-    ParameterDeclaration* right = parseParameterDeclaration();
+    g_ParameterDeclaration* right = parseParameterDeclaration();
 
-    ParameterList* new = b_alloc(parserArena, sizeof(ParameterList));
+    g_ParameterList* new = b_alloc(parserArena, sizeof(g_ParameterList));
     new->parameterList = left;
     new->parameterDeclaration = right;
     left = new;
@@ -548,25 +548,25 @@ ParameterList* parseParameterList() {
   return left;
 }
 
-ParameterDeclaration* parseParameterDeclaration() {
+g_ParameterDeclaration* parseParameterDeclaration() {
 
-  ParameterDeclaration* curr = b_alloc(parserArena, sizeof(ParameterDeclaration));
+  g_ParameterDeclaration* curr = b_alloc(parserArena, sizeof(g_ParameterDeclaration));
   curr->declarationSpecifiers = parseDeclarationSpecifiers();
   curr->declarator = parseDeclarator();
   return curr;
 }
 
-IdentifierList* parseIdentifierList() {
+g_IdentifierList* parseIdentifierList() {
 
-  IdentifierList* left = b_alloc(parserArena, sizeof(IdentifierList));
+  g_IdentifierList* left = b_alloc(parserArena, sizeof(g_IdentifierList));
   left->identifier = parseIdentifier();
 
   while (p_peek()->type == COMMA) {
 
     p_advance(); //eat ','
-    Identifier* right = parseIdentifier();
+    g_Identifier* right = parseIdentifier();
 
-    IdentifierList* new = b_alloc(parserArena, sizeof(IdentifierList));
+    g_IdentifierList* new = b_alloc(parserArena, sizeof(g_IdentifierList));
     new->identifierList = left;
     new->identifier = right;
     left = new;
@@ -575,9 +575,9 @@ IdentifierList* parseIdentifierList() {
   return left;
 }
 
-Initializer* parseInitializer() {
+g_Initializer* parseInitializer() {
 
-  Initializer* curr = b_alloc(parserArena, sizeof(Initializer));
+  g_Initializer* curr = b_alloc(parserArena, sizeof(g_Initializer));
 
   if (p_peek()->type == LEFT_BRACE) {
 
@@ -597,17 +597,17 @@ Initializer* parseInitializer() {
   return curr;
 }
 
-InitializerList* parseInitializerList() {
+g_InitializerList* parseInitializerList() {
 
-  InitializerList* left = b_alloc(parserArena, sizeof(InitializerList));
+  g_InitializerList* left = b_alloc(parserArena, sizeof(g_InitializerList));
   left->initializer = parseInitializer();
 
   while (p_peek()->type == COMMA) {
 
     p_advance(); //eat ','
-    Initializer* right = parseInitializer();
+    g_Initializer* right = parseInitializer();
 
-    InitializerList* new = b_alloc(parserArena, sizeof(InitializerList));
+    g_InitializerList* new = b_alloc(parserArena, sizeof(g_InitializerList));
     new->initializerList = left;
     new->initializer = right;
     left = new;
@@ -617,9 +617,9 @@ InitializerList* parseInitializerList() {
 }
 
 //A.2.3
-Statement* parseStatement() {
+g_Statement* parseStatement() {
 
-  Statement* curr = b_alloc(parserArena, sizeof(Statement));
+  g_Statement* curr = b_alloc(parserArena, sizeof(g_Statement));
   switch (p_peek()->type) {
 
     case LEFT_BRACE:
@@ -649,9 +649,9 @@ Statement* parseStatement() {
   return curr;
 }
 
-CompoundStatement* parseCompoundStatement() {
+g_CompoundStatement* parseCompoundStatement() {
 
-  CompoundStatement* curr = b_alloc(parserArena, sizeof(CompoundStatement));
+  g_CompoundStatement* curr = b_alloc(parserArena, sizeof(g_CompoundStatement));
   p_consume(LEFT_BRACE, "expected '{'");
   if (isDeclarationList()) { curr->declarationList = parseDeclarationList(); }
   if (isStatementList()) { curr->statementList = parseStatementList(); }
@@ -659,16 +659,16 @@ CompoundStatement* parseCompoundStatement() {
   return curr;
 }
 
-DeclarationList* parseDeclarationList() {
+g_DeclarationList* parseDeclarationList() {
 
-  DeclarationList* left = b_alloc(parserArena, sizeof(DeclarationList));
+  g_DeclarationList* left = b_alloc(parserArena, sizeof(g_DeclarationList));
   left->declaration = parseDeclaration();
 
   while (isDeclaration()) {
 
-    Declaration* right = parseDeclaration();
+    g_Declaration* right = parseDeclaration();
 
-    DeclarationList* new = b_alloc(parserArena, sizeof(DeclarationList));
+    g_DeclarationList* new = b_alloc(parserArena, sizeof(g_DeclarationList));
     new->declarationList = left;
     new->declaration = right;
     left = new;
@@ -677,34 +677,35 @@ DeclarationList* parseDeclarationList() {
   return left;
 }
 
-StatementList* parseStatementList() {
+g_StatementList* parseStatementList() {
 
-  StatementList* left = b_alloc(parserArena, sizeof(StatementList));
+  g_StatementList* left = b_alloc(parserArena, sizeof(g_StatementList));
   left->statement = parseStatement();
 
   while (isStatement()) {
 
-    Statement* right = parseStatement();
+    g_Statement* right = parseStatement();
 
-    StatementList* new = b_alloc(parserArena, sizeof(StatementList));
+    g_StatementList* new = b_alloc(parserArena, sizeof(g_StatementList));
     new->statementList = left;
     new->statement = right;
+    left = new;
   }
 
   return left;
 }
 
-ExpressionStatement* parseExpressionStatement() {
+g_ExpressionStatement* parseExpressionStatement() {
 
-  ExpressionStatement* curr = b_alloc(parserArena, sizeof(ExpressionStatement));
+  g_ExpressionStatement* curr = b_alloc(parserArena, sizeof(g_ExpressionStatement));
   if (isExpression()) { curr->expression = parseExpression(); }
   p_consume(SEMICOLON, "expected ';' after expression");
   return curr;
 }
 
-JumpStatement* parseJumpStatement() {
+g_JumpStatement* parseJumpStatement() {
 
-  JumpStatement* curr = b_alloc(parserArena, sizeof(JumpStatement));
+  g_JumpStatement* curr = b_alloc(parserArena, sizeof(g_JumpStatement));
 
   switch (p_peek()->type) {
 
@@ -723,23 +724,23 @@ JumpStatement* parseJumpStatement() {
 }
 
 //A.2.4 External Definitions
-TranslationUnit* parseTranslationUnit() {
+g_TranslationUnit* parseTranslationUnit() {
 
-  TranslationUnit* curr = b_alloc(parserArena, sizeof(TranslationUnit));
+  g_TranslationUnit* curr = b_alloc(parserArena, sizeof(g_TranslationUnit));
   curr->externalDeclaration = parseExternalDeclaration();
   return curr;
 }
 
-ExternalDeclaration* parseExternalDeclaration() {
+g_ExternalDeclaration* parseExternalDeclaration() {
 
-  ExternalDeclaration* curr = b_alloc(parserArena, sizeof(ExternalDeclaration));
+  g_ExternalDeclaration* curr = b_alloc(parserArena, sizeof(g_ExternalDeclaration));
   curr->functionDefinition = parseFunctionDefinition();
   return curr;
 }
 
-FunctionDefinition* parseFunctionDefinition() {
+g_FunctionDefinition* parseFunctionDefinition() {
 
-  FunctionDefinition* curr = b_alloc(parserArena, sizeof(FunctionDefinition));
+  g_FunctionDefinition* curr = b_alloc(parserArena, sizeof(g_FunctionDefinition));
   if (isDeclarationSpecifiers()) { curr->declarationSpecifiers = parseDeclarationSpecifiers(); }
   curr->declarator = parseDeclarator();
   if (isDeclarationList()) { curr->declarationList = parseDeclarationList(); }

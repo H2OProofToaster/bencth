@@ -129,242 +129,242 @@ typedef struct SymbolTable{
 typedef struct {
 
   char* identifier;
-} Identifier;
+} g_Identifier;
 
-typedef enum { INTEGER_DECIMAL_CONSTANT } IntegerConstantType;
+typedef enum { INTEGER_DECIMAL_CONSTANT } g_IntegerConstantType;
 typedef struct {
 
   //There isn't any differing storage needed for decimal/octal/hexadecimal constants
 
-  IntegerConstantType type;
+  g_IntegerConstantType type;
   int value;
-} IntegerConstant;
+} g_IntegerConstant;
 
-typedef enum { CONSTANT_INTEGER } ConstantType;
+typedef enum { CONSTANT_INTEGER } g_ConstantType;
 typedef struct {
 
-  ConstantType type;
+  g_ConstantType type;
   union {
-    struct { IntegerConstant* integerConstant; } integerConstant;
+    struct { g_IntegerConstant* integerConstant; } integerConstant;
   };
-} Constant;
+} g_Constant;
 
 //A.2.1 Expressions
-typedef enum { PRIMARY_IDENTIFIER, PRIMARY_CONSTANT, PRIMARY_EXPRESSION } PrimaryExpressionType;
+typedef enum { PRIMARY_IDENTIFIER, PRIMARY_CONSTANT, PRIMARY_EXPRESSION } g_PrimaryExpressionType;
 typedef struct {
 
-  PrimaryExpressionType type;
+  g_PrimaryExpressionType type;
   union {
-    struct { Identifier* identifier; } identifier;
-    struct { Constant* constant; } constant;
-    struct { struct Expression* expression; } expression;
+    struct { g_Identifier* identifier; } identifier;
+    struct { g_Constant* constant; } constant;
+    struct { struct g_Expression* expression; } expression;
   };
-} PrimaryExpression;
+} g_PrimaryExpression;
 
-typedef enum { UNARY_PRIMARY, UNARY_OPERATOR } UnaryExpressionType;
-typedef struct UnaryExpression {
+typedef enum { UNARY_PRIMARY, UNARY_OPERATOR } g_UnaryExpressionType;
+typedef struct g_UnaryExpression {
 
-  UnaryExpressionType type;
+  g_UnaryExpressionType type;
   union {
-    struct { PrimaryExpression* primaryExpression; } primaryExpression;
-    struct { TokenType operator; struct UnaryExpression* unaryExpression; } operator;
+    struct { g_PrimaryExpression* primaryExpression; } primaryExpression;
+    struct { TokenType operator; struct g_UnaryExpression* unaryExpression; } operator;
   };
-} UnaryExpression;
+} g_UnaryExpression;
 
-typedef enum { MULTIPLICATIVE_UNARY, MULTIPLICATIVE_OPERATOR } MultiplicativeExpressionType;
-typedef struct MultiplicativeExpression {
+typedef enum { MULTIPLICATIVE_UNARY, MULTIPLICATIVE_OPERATOR } g_MultiplicativeExpressionType;
+typedef struct g_MultiplicativeExpression {
 
-  MultiplicativeExpressionType type;
+  g_MultiplicativeExpressionType type;
   union {
-    struct { UnaryExpression* unaryExpression; } unaryExpression;
-    struct { struct MultiplicativeExpression* multiplicativeExpression; TokenType operator; UnaryExpression* unaryExpression; } operator;
+    struct { g_UnaryExpression* unaryExpression; } unaryExpression;
+    struct { struct g_MultiplicativeExpression* multiplicativeExpression; TokenType operator; g_UnaryExpression* unaryExpression; } operator;
   };
-} MultiplicativeExpression;
+} g_MultiplicativeExpression;
 
-typedef enum { ADDITIVE_MULTIPLICATIVE, ADDITIVE_OPERATOR } AdditiveExpressionType;
-typedef struct AdditiveExpression {
+typedef enum { ADDITIVE_MULTIPLICATIVE, ADDITIVE_OPERATOR } g_AdditiveExpressionType;
+typedef struct g_AdditiveExpression {
 
-  AdditiveExpressionType type;
+  g_AdditiveExpressionType type;
   union {
-    struct { MultiplicativeExpression* multiplicativeExpression; } multiplicativeExpression;
-    struct { struct AdditiveExpression* additiveExpression; TokenType operator; MultiplicativeExpression* multiplicativeExpression; } operator;
+    struct { g_MultiplicativeExpression* multiplicativeExpression; } multiplicativeExpression;
+    struct { struct g_AdditiveExpression* additiveExpression; TokenType operator; g_MultiplicativeExpression* multiplicativeExpression; } operator;
   };
-} AdditiveExpression;
+} g_AdditiveExpression;
 
-typedef enum { ASSIGNMENT_ADDITIVE, ASSIGNMENT_OPERATOR } AssignmentExpressionType;
-typedef struct AssignmentExpression {
+typedef enum { ASSIGNMENT_ADDITIVE, ASSIGNMENT_OPERATOR } g_AssignmentExpressionType;
+typedef struct g_AssignmentExpression {
 
-  AssignmentExpressionType type;
+  g_AssignmentExpressionType type;
   union {
-    struct { AdditiveExpression* additiveExpression; } additiveExpression;
-    struct { UnaryExpression* unaryExpression; TokenType operator; struct AssignmentExpression* assignmentExpression; } operator;
+    struct { g_AdditiveExpression* additiveExpression; } additiveExpression;
+    struct { g_UnaryExpression* unaryExpression; TokenType operator; struct g_AssignmentExpression* assignmentExpression; } operator;
   };
-} AssignmentExpression;
+} g_AssignmentExpression;
 
-typedef enum { EXPRESSION_ASSIGNMENT, EXPRESSION_LIST } ExpressionType;
-typedef struct Expression {
+typedef enum { EXPRESSION_ASSIGNMENT, EXPRESSION_LIST } g_ExpressionType;
+typedef struct g_Expression {
 
-  ExpressionType type;
+  g_ExpressionType type;
   union {
-    struct { AssignmentExpression* assignmentExpression; } assignmentExpression;
-    struct { struct Expression* expression; AssignmentExpression* assignmentExpression; } expressionList;
+    struct { g_AssignmentExpression* assignmentExpression; } assignmentExpression;
+    struct { struct g_Expression* expression; g_AssignmentExpression* assignmentExpression; } expressionList;
   };
-} Expression;
+} g_Expression;
 
 //A.2.2 Declarations
 typedef struct {
 
-  struct DeclarationSpecifiers* declarationSpecifiers;
-  struct InitDeclaratorList* initDeclaratorList;
-} Declaration;
+  struct g_DeclarationSpecifiers* declarationSpecifiers;
+  struct g_InitDeclaratorList* initDeclaratorList;
+} g_Declaration;
 
-typedef struct DeclarationSpecifiers {
+typedef struct g_DeclarationSpecifiers {
 
-  struct TypeSpecifier* typeSpecifier;
-  struct DeclarationSpecifiers* declarationSpecifiers;
-} DeclarationSpecifiers;
+  struct g_TypeSpecifier* typeSpecifier;
+  struct g_DeclarationSpecifiers* declarationSpecifiers;
+} g_DeclarationSpecifiers;
 
-typedef struct InitDeclaratorList {
+typedef struct g_InitDeclaratorList {
 
-  struct InitDeclarator* initDeclarator;
-  struct InitDeclaratorList* initDeclaratorList; //comma separated, with an optional trailing comma, i.e. { 1, 2, 3, }
-} InitDeclaratorList;
+  struct g_InitDeclarator* initDeclarator;
+  struct g_InitDeclaratorList* initDeclaratorList; //comma separated, with an optional trailing comma, i.e. { 1, 2, 3, }
+} g_InitDeclaratorList;
 
-typedef struct InitDeclarator {
+typedef struct g_InitDeclarator {
 
-  struct Declarator* declarator;
-  struct Initializer* initializer;
-} InitDeclarator;
+  struct g_Declarator* declarator;
+  struct g_Initializer* initializer;
+} g_InitDeclarator;
 
-typedef struct TypeSpecifier {
+typedef struct g_TypeSpecifier {
 
   TokenType type;
-} TypeSpecifier;
+} g_TypeSpecifier;
 
-typedef struct Declarator {
+typedef struct g_Declarator {
 
-  struct DirectDeclarator* directDeclarator;
-} Declarator;
+  struct g_DirectDeclarator* directDeclarator;
+} g_Declarator;
 
-typedef enum { DIRECT_DECLARATOR_IDENTIFIER, DIRECT_DECLARATOR_DECLARATOR, DIRECT_DECLARATOR_PARAMETER_TYPE_LIST, DIRECT_DECLARATOR_IDENTIFIER_LIST, DIRECT_DECLARATOR_EMPTY_IDENTIFIER_LIST } DirectDeclaratorType;
-typedef struct DirectDeclarator {
+typedef enum { DIRECT_DECLARATOR_IDENTIFIER, DIRECT_DECLARATOR_DECLARATOR, DIRECT_DECLARATOR_PARAMETER_TYPE_LIST, DIRECT_DECLARATOR_IDENTIFIER_LIST, DIRECT_DECLARATOR_EMPTY_IDENTIFIER_LIST } g_DirectDeclaratorType;
+typedef struct g_DirectDeclarator {
 
-  DirectDeclaratorType type;
+  g_DirectDeclaratorType type;
   union {
-    struct { Identifier* identifier; } identifier;
-    struct { Declarator* declarator; } declarator;
-    struct { struct DirectDeclarator* directDeclarator; struct ParameterTypeList* parameterTypeList; } parameterTypeList;
-    struct { struct DirectDeclarator* directDeclarator; struct IdentifierList* identifierList; } identifierList;
+    struct { g_Identifier* identifier; } identifier;
+    struct { g_Declarator* declarator; } declarator;
+    struct { struct g_DirectDeclarator* directDeclarator; struct g_ParameterTypeList* parameterTypeList; } parameterTypeList;
+    struct { struct g_DirectDeclarator* directDeclarator; struct g_IdentifierList* identifierList; } identifierList;
   };
-} DirectDeclarator;
+} g_DirectDeclarator;
 
-typedef enum { PARAMETER_TYPE_LIST_PARAMETER_LIST, PARAMETER_TYPE_LIST_ELLIPSIS } ParameterTypeListType;
-typedef struct ParameterTypeList {
+typedef enum { PARAMETER_TYPE_LIST_PARAMETER_LIST, PARAMETER_TYPE_LIST_ELLIPSIS } g_ParameterTypeListType;
+typedef struct g_ParameterTypeList {
 
-  ParameterTypeListType type;
-  struct ParameterList* parameterList;
-} ParameterTypeList;
+  g_ParameterTypeListType type;
+  struct g_ParameterList* parameterList;
+} g_ParameterTypeList;
 
-typedef struct ParameterList {
+typedef struct g_ParameterList {
 
-  struct ParameterList* parameterList;
-  struct ParameterDeclaration* parameterDeclaration;
-} ParameterList;
+  struct g_ParameterList* parameterList;
+  struct g_ParameterDeclaration* parameterDeclaration;
+} g_ParameterList;
 
-typedef struct ParameterDeclaration {
+typedef struct g_ParameterDeclaration {
 
-  DeclarationSpecifiers* declarationSpecifiers;
-  Declarator* declarator;
-} ParameterDeclaration;
+  g_DeclarationSpecifiers* declarationSpecifiers;
+  g_Declarator* declarator;
+} g_ParameterDeclaration;
 
-typedef struct IdentifierList {
+typedef struct g_IdentifierList {
 
-  struct IdentifierList* identifierList;
-  Identifier* identifier;
-} IdentifierList;
+  struct g_IdentifierList* identifierList;
+  g_Identifier* identifier;
+} g_IdentifierList;
 
-typedef enum { INITIALIZER_ASSIGNMENT, INITIALIZER_INITIALIZER_LIST } InitializerType;
-typedef struct Initializer {
+typedef enum { INITIALIZER_ASSIGNMENT, INITIALIZER_INITIALIZER_LIST } g_InitializerType;
+typedef struct g_Initializer {
 
-  InitializerType type;
+  g_InitializerType type;
   union {
-    struct { AssignmentExpression* assignmentExpression; } assignment;
-    struct { struct InitializerList* initializerList; } initializerList;
+    struct { g_AssignmentExpression* assignmentExpression; } assignment;
+    struct { struct g_InitializerList* initializerList; } initializerList;
   };
-} Initializer;
+} g_Initializer;
 
-typedef struct InitializerList {
+typedef struct g_InitializerList {
 
-  struct InitializerList* initializerList;
-  Initializer* initializer;
-} InitializerList;
+  struct g_InitializerList* initializerList;
+  g_Initializer* initializer;
+} g_InitializerList;
 
 //A.2.3 Statements
-typedef enum { STATEMENT_COMPOUND, STATEMENT_EXPRESSION, STATEMENT_JUMP } StatementType;
+typedef enum { STATEMENT_COMPOUND, STATEMENT_EXPRESSION, STATEMENT_JUMP } g_StatementType;
 typedef struct {
 
-  StatementType type;
+  g_StatementType type;
   union {
-    struct { struct CompoundStatement* compoundStatement; } compound;
-    struct { struct ExpressionStatement* expressionStatement; } expression;
-    struct { struct JumpStatement* jumpStatement; } jump;
+    struct { struct g_CompoundStatement* compoundStatement; } compound;
+    struct { struct g_ExpressionStatement* expressionStatement; } expression;
+    struct { struct g_JumpStatement* jumpStatement; } jump;
   };
-} Statement;
+} g_Statement;
 
-typedef struct CompoundStatement {
+typedef struct g_CompoundStatement {
 
-  struct DeclarationList* declarationList;
-  struct StatementList* statementList;
-} CompoundStatement;
+  struct g_DeclarationList* declarationList;
+  struct g_StatementList* statementList;
+} g_CompoundStatement;
 
-typedef struct DeclarationList {
+typedef struct g_DeclarationList {
 
-  struct DeclarationList* declarationList;
-  Declaration* declaration;
-} DeclarationList;
+  struct g_DeclarationList* declarationList;
+  g_Declaration* declaration;
+} g_DeclarationList;
 
-typedef struct StatementList {
+typedef struct g_StatementList {
 
-  struct StatementList* statementList;
-  Statement* statement;
-} StatementList;
+  struct g_StatementList* statementList;
+  g_Statement* statement;
+} g_StatementList;
 
-typedef struct ExpressionStatement {
+typedef struct g_ExpressionStatement {
 
-  Expression* expression;
-} ExpressionStatement;
+  g_Expression* expression;
+} g_ExpressionStatement;
 
-typedef enum { JUMP_RETURN } JumpStatementType;
-typedef struct JumpStatement {
+typedef enum { JUMP_RETURN } g_JumpStatementType;
+typedef struct g_JumpStatement {
 
-  JumpStatementType type;
+  g_JumpStatementType type;
   union {
-    struct { Expression* expression; } b_return;
+    struct { g_Expression* expression; } b_return;
   };
-} JumpStatement;
+} g_JumpStatement;
 
 //A.2.4 External Definitions
 typedef struct {
 
-  struct ExternalDeclaration* externalDeclaration;
+  struct g_ExternalDeclaration* externalDeclaration;
 
   SymbolTable* symbolTable;
-} TranslationUnit;
+} g_TranslationUnit;
 
-typedef struct ExternalDeclaration {
+typedef struct g_ExternalDeclaration {
 
-  struct FunctionDefinition* functionDefinition;
-} ExternalDeclaration;
+  struct g_FunctionDefinition* functionDefinition;
+} g_ExternalDeclaration;
 
-typedef struct FunctionDefinition {
+typedef struct g_FunctionDefinition {
 
-  DeclarationSpecifiers* declarationSpecifiers;
-  Declarator* declarator;
-  DeclarationList* declarationList;
-  CompoundStatement* compoundStatement;
+  g_DeclarationSpecifiers* declarationSpecifiers;
+  g_Declarator* declarator;
+  g_DeclarationList* declarationList;
+  g_CompoundStatement* compoundStatement;
 
   SymbolTable* symbolTable;
-} FunctionDefinition;
+} g_FunctionDefinition;
 
 typedef struct {
 
@@ -379,7 +379,7 @@ typedef struct {
   size_t current;
 
   //head of ast
-  TranslationUnit* program;
+  g_TranslationUnit* program;
 } Parser;
 
 #endif //BENCTH_STRUCTS_H

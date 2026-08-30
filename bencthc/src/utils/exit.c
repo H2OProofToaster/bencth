@@ -14,3 +14,9 @@ _Noreturn void die(const char* err) {
 
   b_syscall_exit(1);
 }
+
+void warn(const char* err) {
+
+  b_syscall_write(2, err, b_strlen(err));
+  b_syscall_write(2, "\n", 1);
+}

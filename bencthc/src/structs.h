@@ -105,7 +105,17 @@ static const Keyword keywords[] = {
   {"int", 3, INT},
 };
 
-//first used in parsing
+//first used in blind parsing
+
+typedef struct {
+
+  //from scanner
+  Token* tokens;
+  size_t count;
+
+  //next token index
+  size_t current;
+} TokenStream;
 
 //symbols for lookup, stored in a linked list
 //ik, but we aren't really caring about lookup time right now
@@ -171,43 +181,24 @@ typedef struct g_UnaryExpression {
   };
 } g_UnaryExpression;
 
-typedef enum { MULTIPLICATIVE_UNARY, MULTIPLICATIVE_OPERATOR } g_MultiplicativeExpressionType;
-typedef struct g_MultiplicativeExpression {
+//the BINARY_MULTIPLICATIVE tag helps in showing that binary operations have bottomed out, eventually it will be a cast not a primary
+typedef enum { BINARY_UNARY, BINARY_MULTIPLICATIVE, BINARY_ADDITIVE, BINARY_ASSIGNMENT } g_BinaryType;
+typedef struct g_BinaryExpression {
 
-  g_MultiplicativeExpressionType type;
+  g_BinaryType type;
   union {
-    struct { g_UnaryExpression* unaryExpression; } unaryExpression;
-    struct { struct g_MultiplicativeExpression* multiplicativeExpression; TokenType operator; g_UnaryExpression* unaryExpression; } operator;
+    struct { g_UnaryExpression* left; } unary;
+    struct { struct g_BinaryExpression* left; TokenType operator; struct g_BinaryExpression* right; } binary;
   };
-} g_MultiplicativeExpression;
+} g_BinaryExpression;
 
-typedef enum { ADDITIVE_MULTIPLICATIVE, ADDITIVE_OPERATOR } g_AdditiveExpressionType;
-typedef struct g_AdditiveExpression {
-
-  g_AdditiveExpressionType type;
-  union {
-    struct { g_MultiplicativeExpression* multiplicativeExpression; } multiplicativeExpression;
-    struct { struct g_AdditiveExpression* additiveExpression; TokenType operator; g_MultiplicativeExpression* multiplicativeExpression; } operator;
-  };
-} g_AdditiveExpression;
-
-typedef enum { ASSIGNMENT_ADDITIVE, ASSIGNMENT_OPERATOR } g_AssignmentExpressionType;
-typedef struct g_AssignmentExpression {
-
-  g_AssignmentExpressionType type;
-  union {
-    struct { g_AdditiveExpression* additiveExpression; } additiveExpression;
-    struct { g_UnaryExpression* unaryExpression; TokenType operator; struct g_AssignmentExpression* assignmentExpression; } operator;
-  };
-} g_AssignmentExpression;
-
-typedef enum { EXPRESSION_ASSIGNMENT, EXPRESSION_LIST } g_ExpressionType;
+typedef enum { EXPRESSION_BINARY, EXPRESSION_LIST } g_ExpressionType;
 typedef struct g_Expression {
 
   g_ExpressionType type;
   union {
-    struct { g_AssignmentExpression* assignmentExpression; } assignmentExpression;
-    struct { struct g_Expression* expression; g_AssignmentExpression* assignmentExpression; } expressionList;
+    struct { g_BinaryExpression* binaryExpression; } binaryExpression;
+    struct { struct g_Expression* expression; g_BinaryExpression* binaryExpression; } expressionList;
   };
 } g_Expression;
 
@@ -288,7 +279,7 @@ typedef struct g_Initializer {
 
   g_InitializerType type;
   union {
-    struct { g_AssignmentExpression* assignmentExpression; } assignment;
+    struct { g_BinaryExpression* binaryExpression; } assignment;
     struct { struct g_InitializerList* initializerList; } initializerList;
   };
 } g_Initializer;
@@ -344,16 +335,23 @@ typedef struct g_JumpStatement {
 } g_JumpStatement;
 
 //A.2.4 External Definitions
-typedef struct {
+typedef struct g_TranslationUnit {
 
+  struct g_TranslationUnit* translationUnit;
   struct g_ExternalDeclaration* externalDeclaration;
 
   SymbolTable* symbolTable;
 } g_TranslationUnit;
 
+typedef enum { EXTERNAL_DECLARATION_FUNCTION, EXTERNAL_DECLARATION_DECLARATION } ExternalDeclarationType;
 typedef struct g_ExternalDeclaration {
 
-  struct g_FunctionDefinition* functionDefinition;
+  ExternalDeclarationType type;
+  union {
+
+    struct { struct g_FunctionDefinition* functionDefinition; } function;
+    struct { g_Declaration* declaration; } declaration;
+  };
 } g_ExternalDeclaration;
 
 typedef struct g_FunctionDefinition {
@@ -366,20 +364,51 @@ typedef struct g_FunctionDefinition {
   SymbolTable* symbolTable;
 } g_FunctionDefinition;
 
+//first used in lowering
+
+typedef enum { EXPR_BINARY, EXPR_UNARY, EXPR_IDENTIFIER, EXPR_CONSTANT } ExprType;
 typedef struct {
 
-  //node storage
-  Arena* a;
+  ExprType type;
+  union {
 
-  //from scanner
-  Token* tokens;
+    struct { struct Expr* left; TokenType operator; struct Expr* right; } binary;
+    struct { TokenType operator; struct Expr* operand; } unary;
+    struct { Symbol* symbol; } identifier;
+    struct { Token* constant; } constant;
+  };
+} Expr;
+
+typedef struct {
+
+  struct Stmt** declarations;
+  struct Stmt** statements;
+} CompoundStmt;
+
+typedef enum { STMT_EXPR, STMT_DECLARATION, STMT_RETURN, STMT_COMPOUND } StmtType;
+typedef struct {
+
+  StmtType type;
+  union {
+
+    struct { Expr* expr; } expr;
+    struct { TokenType type; Symbol* identifier; Expr* expr; } declaration;
+    struct { Expr* expr; } b_return;
+    struct { CompoundStmt* compoundStmt; } compound;
+  };
+} Stmt;
+
+typedef struct {
+
+  TokenType type;
+  Symbol* identifier;
+  CompoundStmt* compoundStmt;
   size_t count;
+} Function;
 
-  //next token index
-  size_t current;
+typedef struct {
 
-  //head of ast
-  g_TranslationUnit* program;
-} Parser;
+  Function* main;
+} Program;
 
 #endif //BENCTH_STRUCTS_H

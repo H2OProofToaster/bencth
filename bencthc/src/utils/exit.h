@@ -5,7 +5,8 @@
 #ifndef BENCTH_EXIT_H
 #define BENCTH_EXIT_H
 
-//_Noreturn to tell ide that
+//_Noreturn to tell ide that this ends the program
 _Noreturn void die(const char* err);
+void warn(const char* warn);
 
 #endif //BENCTH_EXIT_H

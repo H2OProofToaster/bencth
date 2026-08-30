@@ -39,6 +39,10 @@ CMakeLists.txt
 # IDE - JetBrains (CLion, IntelliJ IDEA)
 .idea/
 
+# VScode
+.vscode
+launch.json
+
 # OS specific
 .DS_Store
 Thumbs.db

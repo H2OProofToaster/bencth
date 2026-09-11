@@ -10,7 +10,7 @@
 //symbols for lookup, stored in a linked list
 typedef struct Symbol {
 
-  Token* token;
+  const Token* token;
   struct Symbol* next;
 
   int offset; //filled in at codegen for stack lookup
@@ -18,17 +18,16 @@ typedef struct Symbol {
 
 typedef struct SymbolTable{
 
-  Symbol* head;
+  Arena* arena;
 
-  struct SymbolTable* outerScope;
+  Symbol* head;
+  Symbol* tail;
+
+  const struct SymbolTable* outerScope;
 } SymbolTable;
 
-SymbolTable* newSymbolTable(SymbolTable* outer);
-void deleteSymbolTable(SymbolTable*);
-
-void insertSymbol(Token* symbol);
-void removeSymbol(Token* symbol);
-
-int isSymbol(Token* symbol);
+SymbolTable* newSymbolTable(const SymbolTable* outer);
+int isDefined(const SymbolTable* sT, const Token* token);
+Symbol* insertSymbol(SymbolTable* sT, const Token* token);
 
 #endif //BENCTH_SYMBOLS_H

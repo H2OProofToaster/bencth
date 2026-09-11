@@ -3,42 +3,44 @@
 //
 
 #include "symbols.h"
+#include "allocator.h"
+#include "exit.h"
+#include "string.h"
 
-static Arena* symbolArena = b_allocArena();
+static Arena* symbolArena = NULL;
 
 //symbol table control
-SymbolTable* newSymbolTable(SymbolTable* outer) {
+SymbolTable* newSymbolTable(const SymbolTable* outer) {
+
+  /* allocate new arena if one doesn't exist*/
+  if (symbolArena == NULL) { symbolArena = b_allocArena(); }
 
   SymbolTable* sT = b_alloc(symbolArena, sizeof(SymbolTable));
   sT->head = NULL;
+  sT->tail = NULL;
   sT->outerScope = outer;
   return sT;
 }
 
-int isDefined(const SymbolTable* sT, const char* name) {
+int isDefined(const SymbolTable* sT, const Token* token) {
 
   for (const Symbol* s = sT->head; s != NULL; s = s->next) {
 
-    if (b_strcmp(s->token->literal.b_string, name) == 0) { return 1; }
+    if (b_strcmp(s->token->literal.b_string, token->literal.b_string) == 0) { return 1; }
   }
 
   return 0;
 }
 
-void addSymbol(SymbolTable* sT, Token* token) {
+Symbol* insertSymbol(SymbolTable* sT, const Token* token) {
 
-  if (isDefined(sT, token->literal.b_string)) { die("Symbol already exists"); }
+  if (isDefined(sT, token)) { die("Symbol already exists"); }
 
-  Symbol* s = b_alloc(blindParserArena, sizeof(Symbol));
+  Symbol* s = b_alloc(symbolArena, sizeof(Symbol));
   s->token = token;
-  s->next = sT->head;
-  sT->head = s;
+  s->next = NULL;
+  if (sT->head == NULL) { sT->head = s; sT->tail = s; }
+  else { sT->tail->next = s; sT->tail = s; }
+
+  return s;
 }
-
-SymbolTable* newSymbolTable();
-void deleteSymbolTable(SymbolTable*);
-
-void insertSymbol(Token* symbol);
-void removeSymbol(Token* symbol);
-
-int isSymbol(Token* symbol);

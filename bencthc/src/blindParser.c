@@ -5,12 +5,15 @@
 #include "blindParser.h"
 
 #include "utils/exit.h"
+#include "utils/allocator.h"
+#include "utils/symbols.h"
 #include "utils/string.h"
 #include "structs.h"
 
 //forward declarations
 static Arena* blindParserArena;
 static TokenStream* tokenStream;
+static SymbolTable* symbolTable;
 
 //prototypes
 g_Expression* parseExpression();
@@ -72,192 +75,49 @@ Token* p_consume(const TokenType type, const char* err) {
 }
 
 //helpers for parsing
-int isTypeSpecifier() {
-
-  if (p_peek()->type == INT) { return 1; }
-  return 0;
-}
-
-int isDirectDeclarator() {
-
-  return p_peek()->type == IDENTIFIER || p_peek()->type == LEFT_PAREN;
-}
-
-int isDeclarator() {
-
-  return isDirectDeclarator();
-}
-
-int isInitDeclarator() {
-
-  return isDeclarator();
-}
-
-int isDeclarationSpecifiers() {
-
-  return isTypeSpecifier();
-}
-
-int isParameterDeclaration() {
-
-  return isDeclarationSpecifiers();
-}
-
-int isParameterList() {
-
-  return isParameterDeclaration();
-}
-
-int isParameterTypeList() {
-
-  return isParameterList();
-}
-
-int isIdentifier() {
-
-  return p_peek()->type == IDENTIFIER;
-}
-
-int isIdentifierList() {
-
-  return isIdentifier();
-}
-
-int isConstant() {
-
-  return p_peek()->type == INTEGER;
-}
-
-int isPrimaryExpression() {
-
-  return isIdentifier() || isConstant() || p_peek()->type == LEFT_PAREN;
-}
-
-int isUnaryOperator() {
-
-  return p_peek()->type == PLUS || p_peek()->type == MINUS || p_peek()->type == EXCLAMATION || p_peek()->type == TILDE || p_peek()->type == AMPERSAND;
-}
-
-int isUnaryExpression() {
-
-  return isPrimaryExpression() || isUnaryOperator();
-}
-
-int isMultiplicativeExpression() {
-
-  return isUnaryExpression();
-}
-
-int isAdditiveExpression() {
-
-  return isMultiplicativeExpression();
-}
-
-int isAssignmentExpression() {
-
-  return isAdditiveExpression();
-}
-
-int isInitializer() {
-
-  return p_peek()->type == RIGHT_BRACE || isAssignmentExpression();
-}
-
-int isInitializerList() {
-
-  return isInitializer();
-}
-
-int isExpression() {
-
-  return isAssignmentExpression();
-}
-
-int isDeclaration() {
-
-  return isDeclarationSpecifiers();
-}
-
-int isDeclarationList() {
-
-  return isDeclaration();
-}
-
-int isCompoundStatement() {
-
-  return p_peek()->type == LEFT_BRACE;
-}
-
-int isJumpStatement() {
-
-  return p_peek()->type == RETURN;
-}
-
-int isExpressionStatement() {
-
-  return isExpression() || p_peek()->type == SEMICOLON;
-}
-
-int isStatement() {
-
-  return isCompoundStatement() || isJumpStatement() || isExpressionStatement();
-}
-
-int isStatementList() {
-
-  return isStatement();
-}
-
-int isFunctionDefinition() {
-
-  return isDeclarationSpecifiers() || isDeclarator();
-}
-
-int isExternalDeclaration() {
-
-  return isFunctionDefinition() || isDeclaration();
-}
-
-int isTranslationUnit() {
-
-  return isExternalDeclaration();
-}
-
-//symbol table manipulation
-SymbolTable* initSymbolTable(SymbolTable* outer) {
-
-  SymbolTable* sT = b_alloc(blindParserArena, sizeof(SymbolTable));
-  sT->head = NULL;
-  sT->outerScope = outer;
-  return sT;
-}
-
-int isDefined(const SymbolTable* sT, const char* name) {
-
-  for (const Symbol* s = sT->head; s != NULL; s = s->next) {
-
-    if (b_strcmp(s->token->literal.b_string, name) == 0) { return 1; }
-  }
-
-  return 0;
-}
-
-void addSymbol(SymbolTable* sT, Token* token) {
-
-  if (isDefined(sT, token->literal.b_string)) { die("Symbol already exists"); }
-
-  Symbol* s = b_alloc(blindParserArena, sizeof(Symbol));
-  s->token = token;
-  s->next = sT->head;
-  sT->head = s;
-}
+int isTypeSpecifier() { return p_peek()->type == INT; }
+int isDirectDeclarator() { return p_peek()->type == IDENTIFIER || p_peek()->type == LEFT_PAREN; }
+int isDeclarator() { return isDirectDeclarator(); }
+int isInitDeclarator() { return isDeclarator(); }
+int isDeclarationSpecifiers() { return isTypeSpecifier(); }
+int isParameterDeclaration() { return isDeclarationSpecifiers(); }
+int isParameterList() { return isParameterDeclaration(); }
+int isParameterTypeList() { return isParameterList(); }
+int isIdentifier() { return p_peek()->type == IDENTIFIER; }
+int isIdentifierList() { return isIdentifier(); }
+int isConstant() { return p_peek()->type == INTEGER; }
+int isPrimaryExpression() { return isIdentifier() || isConstant() || p_peek()->type == LEFT_PAREN; }
+int isUnaryOperator() { return p_peek()->type == PLUS || p_peek()->type == MINUS || p_peek()->type == EXCLAMATION || p_peek()->type == TILDE || p_peek()->type == AMPERSAND; }
+int isUnaryExpression() { return isPrimaryExpression() || isUnaryOperator(); }
+int isMultiplicativeExpression() { return isUnaryExpression(); }
+int isAdditiveExpression() { return isMultiplicativeExpression(); }
+int isAssignmentExpression() { return isAdditiveExpression(); }
+int isInitializer() { return p_peek()->type == RIGHT_BRACE || isAssignmentExpression(); }
+int isInitializerList() { return isInitializer(); }
+int isExpression() { return isAssignmentExpression(); }
+int isDeclaration() { return isDeclarationSpecifiers(); }
+int isDeclarationList() { return isDeclaration(); }
+int isCompoundStatement() { return p_peek()->type == LEFT_BRACE; }
+int isJumpStatement() { return p_peek()->type == RETURN; }
+int isExpressionStatement() { return isExpression() || p_peek()->type == SEMICOLON; }
+int isStatement() { return isCompoundStatement() || isJumpStatement() || isExpressionStatement(); }
+int isStatementList() { return isStatement(); }
+int isFunctionDefinition() { return isDeclarationSpecifiers() || isDeclarator(); }
+int isExternalDeclaration() { return isFunctionDefinition() || isDeclaration(); }
+int isTranslationUnit() { return isExternalDeclaration(); }
 
 //A.1.4 Constants
 g_Identifier* parseIdentifier() {
 
   const Token* t = p_consume(IDENTIFIER, "expected identifier");
   g_Identifier* curr = b_alloc(blindParserArena, sizeof(g_Identifier));
-  curr->identifier = t->literal.b_string;
+
+  /* add to symbol table */
+  if (isDefined(symbolTable, t)) { die( 
+                                   b_concat(blindParserArena, "symbol ", 
+                                   b_concat(blindParserArena, t->literal.b_string, " already exists") ) ); }
+  curr->identifier = insertSymbol(symbolTable, t);
+
   return curr;
 }
 
@@ -395,18 +255,16 @@ g_BinaryExpression* parseAssignmentExpression() {
 g_Expression* parseExpression() {
 
   g_Expression* left = b_alloc(blindParserArena, sizeof(g_Expression));
-  left->type = EXPRESSION_BINARY;
-  left->binaryExpression.binaryExpression = parseAssignmentExpression();
-  if (left->binaryExpression.binaryExpression->type != BINARY_ASSIGNMENT) { die("expected assignment expression as expression"); }
+  left->binaryExpression = parseAssignmentExpression();
+  if (left->binaryExpression->type != BINARY_ASSIGNMENT) { die("expected assignment expression as expression"); }
 
   while (p_peek()->type == COMMA) {
 
     g_Expression* curr = b_alloc(blindParserArena, sizeof(g_Expression));
-    curr->type = EXPRESSION_LIST;
-    curr->expressionList.expression = left;
+    curr->expression = left;
     p_advance(); //eat comma
-    curr->expressionList.binaryExpression = parseAssignmentExpression();
-    if (curr->expressionList.binaryExpression->type != BINARY_ASSIGNMENT) { die("expected assignment expression as left side of expression list"); }
+    curr->binaryExpression = parseAssignmentExpression();
+    if (curr->binaryExpression->type != BINARY_ASSIGNMENT) { die("expected assignment expression as left side of expression list"); }
 
     left = curr;
   }
@@ -665,8 +523,19 @@ g_CompoundStatement* parseCompoundStatement() {
 
   g_CompoundStatement* curr = b_alloc(blindParserArena, sizeof(g_CompoundStatement));
   p_consume(LEFT_BRACE, "expected '{'");
-  if (isDeclarationList()) { curr->declarationList = parseDeclarationList(); curr->statementList = NULL; }
-  if (isStatementList()) { curr->statementList = parseStatementList(); curr->declarationList = NULL; }
+
+  /* push symbol table */
+  symbolTable = newSymbolTable(symbolTable);
+  curr->symbolTable = symbolTable;
+
+  if (isDeclarationList()) { curr->declarationList = parseDeclarationList(); }
+  else { curr->declarationList = NULL; }
+  if (isStatementList()) { curr->statementList = parseStatementList(); }
+  else { curr->statementList = NULL; }
+
+  /* pop symbol table */
+  symbolTable = symbolTable->outerScope;
+
   p_consume(RIGHT_BRACE, "expected '}'");
   return curr;
 }
@@ -743,6 +612,7 @@ g_TranslationUnit* parseTranslationUnit() {
   g_TranslationUnit* left = b_alloc(blindParserArena, sizeof(g_TranslationUnit));
   left->translationUnit = NULL;
   left->externalDeclaration = parseExternalDeclaration();
+  left->symbolTable = symbolTable; //take current symbol table
 
   while (isTranslationUnit()) {
 
@@ -750,6 +620,7 @@ g_TranslationUnit* parseTranslationUnit() {
     g_TranslationUnit* new = b_alloc(blindParserArena, sizeof(g_TranslationUnit));
     new->translationUnit = left;
     new->externalDeclaration = right;
+    new->symbolTable = symbolTable; //take current symbol table
     left = new;
   }
 
@@ -793,6 +664,8 @@ g_TranslationUnit* parse(const Scanner* s) {
   tokenStream->tokens = s->tokens;
   tokenStream->count = s->count;
   tokenStream->current = 0;
+
+  symbolTable = newSymbolTable(symbolTable);
 
   g_TranslationUnit* tU = parseTranslationUnit();
 

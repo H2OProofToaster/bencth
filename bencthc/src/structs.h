@@ -117,28 +117,12 @@ typedef struct {
   size_t current;
 } TokenStream;
 
-//symbols for lookup, stored in a linked list
-//ik, but we aren't really caring about lookup time right now
-typedef struct Symbol {
-
-  Token* token;
-  struct Symbol* next;
-
-  int offset; //filled in at codegen for stack lookup
-} Symbol;
-typedef struct SymbolTable{
-
-  Symbol* head;
-
-  struct SymbolTable* outerScope;
-} SymbolTable;
-
 //encoding the grammar
 
 //A.1.4 Constants
 typedef struct {
 
-  char* identifier;
+  Symbol* identifier;
 } g_Identifier;
 
 typedef enum { INTEGER_DECIMAL_CONSTANT } g_IntegerConstantType;
@@ -192,14 +176,10 @@ typedef struct g_BinaryExpression {
   };
 } g_BinaryExpression;
 
-typedef enum { EXPRESSION_BINARY, EXPRESSION_LIST } g_ExpressionType;
 typedef struct g_Expression {
 
-  g_ExpressionType type;
-  union {
-    struct { g_BinaryExpression* binaryExpression; } binaryExpression;
-    struct { struct g_Expression* expression; g_BinaryExpression* binaryExpression; } expressionList;
-  };
+  struct g_Expression* expression; 
+  g_BinaryExpression* binaryExpression;
 } g_Expression;
 
 //A.2.2 Declarations
@@ -306,6 +286,9 @@ typedef struct g_CompoundStatement {
 
   struct g_DeclarationList* declarationList;
   struct g_StatementList* statementList;
+
+  //non grammatical
+  struct SymbolTable* symbolTable;
 } g_CompoundStatement;
 
 typedef struct g_DeclarationList {
@@ -340,7 +323,8 @@ typedef struct g_TranslationUnit {
   struct g_TranslationUnit* translationUnit;
   struct g_ExternalDeclaration* externalDeclaration;
 
-  SymbolTable* symbolTable;
+  //non grammatical
+  struct SymbolTable* symbolTable;
 } g_TranslationUnit;
 
 typedef enum { EXTERNAL_DECLARATION_FUNCTION, EXTERNAL_DECLARATION_DECLARATION } ExternalDeclarationType;
@@ -360,55 +344,6 @@ typedef struct g_FunctionDefinition {
   g_Declarator* declarator;
   g_DeclarationList* declarationList;
   g_CompoundStatement* compoundStatement;
-
-  SymbolTable* symbolTable;
 } g_FunctionDefinition;
-
-//first used in lowering
-
-typedef enum { EXPR_BINARY, EXPR_UNARY, EXPR_IDENTIFIER, EXPR_CONSTANT } ExprType;
-typedef struct {
-
-  ExprType type;
-  union {
-
-    struct { struct Expr* left; TokenType operator; struct Expr* right; } binary;
-    struct { TokenType operator; struct Expr* operand; } unary;
-    struct { Symbol* symbol; } identifier;
-    struct { Token* constant; } constant;
-  };
-} Expr;
-
-typedef struct {
-
-  struct Stmt** declarations;
-  struct Stmt** statements;
-} CompoundStmt;
-
-typedef enum { STMT_EXPR, STMT_DECLARATION, STMT_RETURN, STMT_COMPOUND } StmtType;
-typedef struct {
-
-  StmtType type;
-  union {
-
-    struct { Expr* expr; } expr;
-    struct { TokenType type; Symbol* identifier; Expr* expr; } declaration;
-    struct { Expr* expr; } b_return;
-    struct { CompoundStmt* compoundStmt; } compound;
-  };
-} Stmt;
-
-typedef struct {
-
-  TokenType type;
-  Symbol* identifier;
-  CompoundStmt* compoundStmt;
-  size_t count;
-} Function;
-
-typedef struct {
-
-  Function* main;
-} Program;
 
 #endif //BENCTH_STRUCTS_H

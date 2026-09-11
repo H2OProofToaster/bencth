@@ -2,7 +2,7 @@
 // Created by nick on 6/27/26.
 //
 
-#include "scanner.h"
+#include "lexer.h"
 
 #include "utils/file.h"
 #include "utils/exit.h"
@@ -19,11 +19,11 @@ int isAlphaNumeric(const char c) { return isAlpha(c) || isDigit(c); }
 int isAtEnd(const Scanner* s) { return s->curr >= s->source + s->length; }
 
 //eat one char
-char* s_advance(Scanner* s) { return s->curr++; }
+char* l_advance(Scanner* s) { return s->curr++; }
 
-char s_peek(const Scanner* s) { return s->curr[0]; }
+char l_peek(const Scanner* s) { return s->curr[0]; }
 
-char s_peekNext(const Scanner* s) { return s->curr[1]; }
+char l_peekNext(const Scanner* s) { return s->curr[1]; }
 
 Token* addToken(Scanner* s) {
 
@@ -53,7 +53,7 @@ void checkKeyword(Token* t) {
 }
 
 //these consume functions wrap all the token-specific work to do
-//(I didn't want to clutter the switch in scanToken)
+//(I didn't want to clutter the switch in lexToken)
 //they should be pretty self-explanatory
 //don't hate on the spacing here, it's ORGANIZED
 
@@ -82,7 +82,7 @@ void consumeDouble(Scanner* s, const TokenType type, char* c) {
 
   t->literal.b_string = b_alloc(s->a, 3);
   t->literal.b_string[0] = *c;
-  t->literal.b_string[1] = *s_advance(s);
+  t->literal.b_string[1] = *l_advance(s);
   t->literal.b_string[2] = '\0';
 }
 
@@ -98,8 +98,8 @@ void consumeTriple(Scanner* s, const TokenType type, char* c) {
 
   t->literal.b_string = b_alloc(s->a, 4);
   t->literal.b_string[0] = *c;
-  t->literal.b_string[1] = *s_advance(s);
-  t->literal.b_string[2] = *s_advance(s);
+  t->literal.b_string[1] = *l_advance(s);
+  t->literal.b_string[2] = *l_advance(s);
   t->literal.b_string[3] = '\0';
 }
 
@@ -114,9 +114,9 @@ void consumeNumber(Scanner* s, char* c) {
   t->length = 1;
 
   t->literal.b_integer = *c - '0';
-  while (isDigit(s_peek(s))) {
+  while (isDigit(l_peek(s))) {
 
-    t->literal.b_integer = t->literal.b_integer * 10 + ( *s_advance(s) - '0' );
+    t->literal.b_integer = t->literal.b_integer * 10 + ( *l_advance(s) - '0' );
     t->length++;
   }
 }
@@ -130,9 +130,9 @@ void consumeIdentifier(Scanner* s, char* c) {
   t->lexeme = c;
 
   t->length = 1;
-  while (isAlphaNumeric(s_peek(s))) {
+  while (isAlphaNumeric(l_peek(s))) {
 
-    s_advance(s);
+    l_advance(s);
     t->length++;
   }
 
@@ -157,28 +157,28 @@ void consumeString(Scanner* s, char* c) {
   //allocate space for literal
   //upper bound as the rest of source to be safe (ik that seems extra)
   t->literal.b_string = b_alloc(s->a, s->source + s->length - s->curr + 1);
-  while (s_peek(s) != '"' && !isAtEnd(s)) {
+  while (l_peek(s) != '"' && !isAtEnd(s)) {
 
     //check for splice
-    if (s_peek(s) == '\\' && s_peekNext(s) == '\n') {
+    if (l_peek(s) == '\\' && l_peekNext(s) == '\n') {
 
-      s_advance(s); //eat backslash
-      s_advance(s); //eat newline
+      l_advance(s); //eat backslash
+      l_advance(s); //eat newline
       s->line++;
       continue; //don't count splice in length
     }
 
-    t->literal.b_string[t->length++] = *s_advance(s);
+    t->literal.b_string[t->length++] = *l_advance(s);
   }
   //unterminated string
   if (isAtEnd(s)) { die("unterminated string"); }
-  s_advance(s); //eat closing "
+  l_advance(s); //eat closing "
   t->literal.b_string[t->length] = '\0';
 }
 
-void scanToken(Scanner* s) {
+void lexToken(Scanner* s) {
 
-  char* c = s_advance(s);
+  char* c = l_advance(s);
 
   switch (*c) {
 
@@ -205,9 +205,9 @@ void scanToken(Scanner* s) {
     case '/':
 
       //comment, b/c next is also a '/'
-      if (s_peek(s) == '/') {
+      if (l_peek(s) == '/') {
 
-        while (s_peek(s) != '\n' && !isAtEnd(s)) { c = s_advance(s); }
+        while (l_peek(s) != '\n' && !isAtEnd(s)) { c = l_advance(s); }
         //continue because c(urr) is now pointing at the newline
         //just let the '\n' case handle it to increment s->line
         //don't do that, that's stupid if any of the next characters are in the comment 7/27/26
@@ -247,7 +247,7 @@ void scanToken(Scanner* s) {
   }
 }
 
-Scanner* scan(const int fd) {
+Scanner* lex(const int fd) {
 
   //setup scanner struct
   Arena* a = b_allocArena();
@@ -267,7 +267,7 @@ Scanner* scan(const int fd) {
   s->curr = s->source;
   while (s->curr < s->source + s->length) {
 
-    scanToken(s);
+    lexToken(s);
   }
 
   //manually add EOF token bc idrc

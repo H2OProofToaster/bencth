@@ -49,7 +49,7 @@ int main(const int argc, char** argv) {
   //reset offset
   b_syscall_lseek(fd, 0, SEEK_SET);
 
-  const Scanner* scanner = scan(fd);
+  const Scanner* scanner = lex(fd);
 
   const Parser* parser = parse(scanner);
 

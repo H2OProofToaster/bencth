@@ -2,11 +2,11 @@
 // Created by nick on 7/13/26.
 //
 
-#ifndef BENCTH_PARSER_H
-#define BENCTH_PARSER_H
+#ifndef BENCTH_BLIND_PARSER_H
+#define BENCTH_BLIND_PARSER_H
 
-#include "scanner.h"
+#include "structs.h"
 
-Parser* parse(const Scanner* s);
+g_TranslationUnit* parse(const Scanner* s);
 
-#endif //BENCTH_PARSER_H
+#endif //BENCTH_BLIND_PARSER_H

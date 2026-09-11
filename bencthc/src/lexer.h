@@ -7,6 +7,6 @@
 
 #include "structs.h"
 
-Scanner* scan(int fd);
+Scanner* lex(int fd);
 
 #endif //BENCTH_SCANNER_H

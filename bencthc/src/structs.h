@@ -122,7 +122,7 @@ typedef struct {
 //A.1.4 Constants
 typedef struct {
 
-  Symbol* identifier;
+  struct Symbol* identifier;
 } g_Identifier;
 
 typedef enum { INTEGER_DECIMAL_CONSTANT } g_IntegerConstantType;

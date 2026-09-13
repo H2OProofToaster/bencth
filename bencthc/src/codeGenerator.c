@@ -227,7 +227,7 @@ char* generateExpr(SymbolTable* sT, const Expr* e) {
   }
 }
 
-void generateStatements(SymbolTable* sT, const Function* f) {
+void generateStatements(SymbolTable* sT, const g_FunctionDefinition* f) {
 
   for (size_t i = 0; i < f->count; i++) {
 
@@ -280,7 +280,7 @@ void generateStatements(SymbolTable* sT, const Function* f) {
   }
 }
 
-Arena* generate(const Parser* p, const char* name) {
+Arena* generate(const g_TranslationUnit* p, const char* name) {
 
   codegenArena = b_allocArena();
 
@@ -299,7 +299,7 @@ Arena* generate(const Parser* p, const char* name) {
   const char* ops2[] = { "%rsp", "%rbp" };
   writeInstr("mov", 2, ops2);
 
-  generateStatements(p->program->function->symbolTable, p->program->function);
+  generateStatements(p->program->functionDefinition->symbolTable, p->program->functionDefinition);
 
   //epilogue
   writeInstr("leave", 0, NULL);

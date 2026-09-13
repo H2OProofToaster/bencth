@@ -2,7 +2,7 @@
 // Created by nick on 7/13/26.
 //
 
-#include "blindParser.h"
+#include "parser.h"
 
 #include "utils/exit.h"
 #include "utils/allocator.h"

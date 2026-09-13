@@ -23,7 +23,7 @@ typedef struct SymbolTable{
   Symbol* head;
   Symbol* tail;
 
-  const struct SymbolTable* outerScope;
+  struct SymbolTable* outerScope;
 } SymbolTable;
 
 SymbolTable* newSymbolTable(const SymbolTable* outer);

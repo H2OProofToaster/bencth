@@ -7,6 +7,6 @@
 
 #include "structs.h"
 
-Arena* generate(const Parser* p, const char* name);
+Arena* generate(const g_TranslationUnit* p, const char* name);
 
 #endif //BENCTH_CODEGENERATOR_H

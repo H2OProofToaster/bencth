@@ -7,6 +7,23 @@
 
 void verifyFunctionDefinition(const g_FunctionDefinition* functionDefinition) {
 
+	/* The identifier delcared in a function definition (which is the name of the function) shall have a function type, as specified by the declarator
+   * portion of the function definition
+   */
+	/* The return type of a function shall be 'void' or an object type other than array */
+	/* If the declarator includes a parameter type list, the declaration of each parameter shall include an identifier (except for the special case of a 
+   * parameter list consisting of a single parameter of type 'void', in which ther shall not be an identifier). No declaration list shall follow
+   */
+	/* If the declarator includes an identifier list, each declaration in the declaration list shall have at least one declarator, and those declarators
+   * shall delcare only identifiers from the identifier list. An identifier declared as a typedef name shall not be redeclared as a parameter. The declarations
+   * in the declaration list shall contain no storage-class specifier other than 'register' and no initializations
+   */
+	/* The declarator in a function definition specifies the name of the function being defined and the identifiers of its parameters. If the declarator
+   * includes a parameter type list, the list also specifies the types of all the parameters; such a declarator also serves as a function prototype for 
+   * later calls to the same function in the same translation unit. If the declarator includes an identifier list, the types of the parameters may be declared
+   * in a following declaration list. Any parameter that is not declared has type 'int'
+   */
+	/* If a function that accepts a variable number of arguments is defined without a parameter type list that ends with the ellipsis notation, the behavior is undefined *	
 
 }
 

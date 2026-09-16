@@ -7,6 +7,7 @@
 
 void verifyFunctionDefinition(const g_FunctionDefinition* functionDefinition) {
 
+  /* Constraints */
 	/* The identifier delcared in a function definition (which is the name of the function) shall have a function type, as specified by the declarator
    * portion of the function definition
    */
@@ -18,17 +19,25 @@ void verifyFunctionDefinition(const g_FunctionDefinition* functionDefinition) {
    * shall delcare only identifiers from the identifier list. An identifier declared as a typedef name shall not be redeclared as a parameter. The declarations
    * in the declaration list shall contain no storage-class specifier other than 'register' and no initializations
    */
+
+  /* Semantics*/
 	/* The declarator in a function definition specifies the name of the function being defined and the identifiers of its parameters. If the declarator
    * includes a parameter type list, the list also specifies the types of all the parameters; such a declarator also serves as a function prototype for 
    * later calls to the same function in the same translation unit. If the declarator includes an identifier list, the types of the parameters may be declared
    * in a following declaration list. Any parameter that is not declared has type 'int'
    */
-	/* If a function that accepts a variable number of arguments is defined without a parameter type list that ends with the ellipsis notation, the behavior is undefined *	
+	/* If a function that accepts a variable number of arguments is defined without a parameter type list that ends with the ellipsis notation, the behavior is undefined */	
+  /* On entry to the function the value of each argument expression shall be converted to the type of its corresponding parameter, as if by assignment to the parameter.
+   * Array expression and function designators as argumnets are converted to pointers before the call. A declaration of a parmeter as "array of *type*" shall be adjusted
+   * to "pointer to *type,*" and a declaration of a parameter as "function returning *type*" shall be adjusted to "pointer to function returning *type,*" as in 3.2.2.1.
+   * The resulting parameter type shall be an object type.*/
+   /* Each parameter has automatic storage duration. Its identifier is an lvalue. The layout of the storage for parameters is unspecified.*/
 
 }
 
 void verifyExternalDeclaration(const g_ExternalDeclaration* externalDeclaration) {
 
+  /* Constraints */
   /* The storage class specifiers 'auto' and 'register' shall not appear in the declaration specifiers in an external declaration */
   /* There shall be no more than one external definition for each identifier declared with internal linkage in a translation unit.
    * Moreover, if an identifier declared with internal linkage is used in an expression (other than as a part of the operand of a 'sizeof' operator,

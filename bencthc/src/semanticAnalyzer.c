@@ -5,9 +5,11 @@
 #include "semanticAnalyzer.h"
 #include "structs.h"
 
+
+
 void verifyFunctionDefinition(const g_FunctionDefinition* functionDefinition) {
 
-
+  
 }
 
 void verifyExternalDeclaration(const g_ExternalDeclaration* externalDeclaration) {

@@ -42,3 +42,6 @@ launch.json
 # OS specific
 .DS_Store
 Thumbs.db
+
+# Clangd
+.clangd

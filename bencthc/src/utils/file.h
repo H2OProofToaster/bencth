@@ -6,7 +6,6 @@
 #define BENCTH_FILE_H
 
 #include "allocator.h"
-#include "iHateLibC.h"
 #include "syscalls/syscall.h"
 
 int b_fopen(const char* path, int flags, int mode);

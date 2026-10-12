@@ -9,7 +9,7 @@
 #include "utils/string.h"
 #include "utils/syscalls/syscall.h"
 #include "structs.h"
-#include "scanner.h"
+#include "lexer.h"
 #include "blindParser.h"
 #include "codeGenerator.h"
 

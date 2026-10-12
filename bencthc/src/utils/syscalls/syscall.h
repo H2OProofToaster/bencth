@@ -5,7 +5,7 @@
 #ifndef BENCTH_SYSCALL_H
 #define BENCTH_SYSCALL_H
 
-#include "bencthc/src/utils/iHateLibC.h"
+#include "../iHateLibC.h"
 
 //0
 long b_syscall_read(int fd, void *buf, size_t count);

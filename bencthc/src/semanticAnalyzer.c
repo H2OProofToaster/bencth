@@ -7,7 +7,7 @@
 
 void verifyFunctionDefinition(const g_FunctionDefinition* functionDefinition) {
 
-  /* Constraints */
+   /* Constraints */
 	/* The identifier delcared in a function definition (which is the name of the function) shall have a function type, as specified by the declarator
    * portion of the function definition
    */
@@ -32,7 +32,6 @@ void verifyFunctionDefinition(const g_FunctionDefinition* functionDefinition) {
    * to "pointer to *type,*" and a declaration of a parameter as "function returning *type*" shall be adjusted to "pointer to function returning *type,*" as in 3.2.2.1.
    * The resulting parameter type shall be an object type.*/
    /* Each parameter has automatic storage duration. Its identifier is an lvalue. The layout of the storage for parameters is unspecified.*/
-
 }
 
 void verifyExternalDeclaration(const g_ExternalDeclaration* externalDeclaration) {

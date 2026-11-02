@@ -26,6 +26,26 @@ void verifyStatement(const g_Statement* statement) {
   }
 }
 
+void verifyCompoundStatement(const g_CompoundStatement* compoundStatement) {
+
+  /* # 3.6.2 Compound Statement, or Block */
+  /* ## Semantics */
+  /* A *compound statement* (also called a *block*) allows a set of statements to be grouped into one syntactic unit, which may have its own set of declarations and initializations
+   * (as discuessed in 3.1.2.4). The inititalizers of objects that have automatic storage duration are evaluated and the values are stored in the objects in the order their
+   * declarators appear in the translation unit.
+   */
+
+  if (compoundStatement->declarationList) { verifyDeclarationList(compoundStatement->declarationList); }
+  if (compoundStatement->statementList) { verifyStatementList(compoundStatement->statementList); }
+}
+
+void verifyExpressionStatement(const g_ExpressionStatement* expressionStatement) {
+
+  /* # 3.6.3 Expression and Null Statements */
+  /* ## Semantics */
+  /* The expression in an expression statement is evaluated as a void expression for it side effects. (Footnote 75: )*/
+}
+
 //A.2.4 External Definitions
 void verifyTranslationUnit(const g_TranslationUnit* translationUnit) {
 

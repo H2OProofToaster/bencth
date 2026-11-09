@@ -5,7 +5,137 @@
 #include "semanticAnalyzer.h"
 #include "structs.h"
 
+/* # 3.5.7 Initialization */
+/* ## Constraints */
+/* There shall be no more initializers in an initializer list than there are objects to be initialized. */
+/* The type of the entity to be inititalized shall be an object type or an array of unknown size. */
+/* All the expressions in an initializer for an object that has static storage duration or in an initializer
+ * list for an object that has aggregate or union type shall be constant expressions.
+ */
+/* If the declaration of an identifier has block scope and the identifier has external or internal linkage,
+ * the declaration shall have no initializer for the identifier.
+ */
+
+/* ## Semantics */
+/* An initializer specifies the initial value stored in an object. */
+/* All unnamed structure or union members are ignored during initialization. */
+/* If an object that has automatic storage duration is not initialized explicitly, its value is indeterminate.
+ * (Footnote 74: Unlike in the base document, any automatic duration object may be initialized.) If an object that has
+ * static storage duration is not initialized explicitly, it is initialized implicityly as if every member that has arithmatic type
+ * were assigned 0 and every member that has pointer type were assigned a null pointer constant.
+ */
+/* The initializer for a scalar shall be single expression, optionally enclosed in braces. The initial value of the object is that
+ * of the expression; the same type constraints and conversiosn as for simple assignment apply, taking the type of the scalar to be
+ * the unqualified version of its declared type.
+ */
+/* A brace-enclosed inititalizer for a union object initializes the member that appears first in the delcaration list of the union type */
+
+void verifyInitializerList(const g_InitializerList* initializerList) {
+
+}
+
 //A.2.3 Statements
+void verifyJumpStatement(const g_JumpStatement* jumpStatement) {
+
+  /* # 3.6.6 Jump Statements */
+  /* ## Semantics */
+  /* A jump statement causes and unconditional jump to another place. */
+
+  switch (jumpStatement->type) {
+
+    case JUMP_RETURN :
+
+    /* # 3.6.6.4 The `return` Statement */
+    /* ## Constraints */
+    /* A `return` statement with an expression shall not appear in a function whose return type is `void`. */
+
+    /* ## Semantics */
+    /* A `return` statement terminates execution of the current function and returns control to its caller.
+     * A function may have any number of `return` statements, with and without expressions.
+     */
+    /* If a `return` statement with an expression is executed, the value of the expression is returned to the caller
+     * as the value of the function call expression. If the expression has a type different from that of the function
+     * in which it appears, it is converted as if it were assigned to an object of that type.
+     */  
+    /* If a `return` statement without an expression is executed, and the value of the function call is used by the caller,
+     * the behvaior is undefined. Reaching the `}` that terminates a function is equivalent to executing a return statement
+     * without an expression.
+     */
+
+    verifyExpression(jumpStatement->b_return.expression);
+  }
+}
+
+void verifyExpressionStatement(const g_ExpressionStatement* expressionStatement) {
+
+  /* # 3.6.3 Expression and Null Statements */
+  /* ## Semantics */
+  /* The expression in an expression statement is evaluated as a void expression for it side effects. (Footnote 75: Such as assignments, and function calls which have side effects.)*/
+  /* A *null statement* (consisting of just a semicolon) performs no operations. */
+
+  /* ## Examples */
+  /* If a function call is evalutaed as an expression statement for its side effects only, the discarding of its value may be made explicit by converting the expression to a
+   * void expression by means of a cast:
+   * ```
+   * int p(int);
+   * //...//
+   * (void)p(0);
+   * ```
+   * In the program fragment
+   * ```
+   * char *s ;
+   * //...//
+   * while (*s++ != '\0')
+   *       ;
+   * ```
+   * a null statement is used to supply an empty loop body to the iteration statement.
+   */
+  /* A null statement may also be used to carry a label just before the closing `}` of a compound statement.
+   * ```
+   * while (loop1) {
+   *       //...//
+   *       while (loop2) {
+   *             //...//
+   *             if (want_out)
+   *                   goto end_loop1;
+   *             //...//
+   *       }
+   *       //...//
+   * end_loop1: ;
+   * }
+   * ```
+   */
+  /* **Forward References:** iteration statements (3.6.5). */
+
+  if (expressionStatement->expression) { verifyExpression(expressionStatement->expression); }
+}
+
+void verifyStatement(const g_Statement* statement);
+void verifyStatementList(const g_StatementList* statementList) {
+
+  if (statementList->statementList) { verifyStatementList(statementList->statementList); }
+  else { verifyStatement(statementList->statement); }
+}
+
+void verifyDeclarationList(const g_DeclarationList* declarationList) {
+
+  if (declarationList->declarationList) { verifyDeclarationList(declarationList->declarationList); }
+  else { verifyDeclaration(declarationList->declaration); }
+}
+
+void verifyCompoundStatement(const g_CompoundStatement* compoundStatement) {
+
+  /* # 3.6.2 Compound Statement, or Block */
+  /* ## Semantics */
+  /* A *compound statement* (also called a *block*) allows a set of statements to be grouped into one syntactic unit, which may have its own set of declarations and initializations
+   * (as discuessed in 3.1.2.4). The inititalizers of objects that have automatic storage duration are evaluated and the values are stored in the objects in the order their
+   * declarators appear in the translation unit.
+   */
+
+  if (compoundStatement->declarationList) { verifyDeclarationList(compoundStatement->declarationList); }
+  if (compoundStatement->statementList) { verifyStatementList(compoundStatement->statementList); }
+}
+
 void verifyStatement(const g_Statement* statement) {
 
   /* # 3.6 Statements */
@@ -26,75 +156,7 @@ void verifyStatement(const g_Statement* statement) {
   }
 }
 
-void verifyCompoundStatement(const g_CompoundStatement* compoundStatement) {
-
-  /* # 3.6.2 Compound Statement, or Block */
-  /* ## Semantics */
-  /* A *compound statement* (also called a *block*) allows a set of statements to be grouped into one syntactic unit, which may have its own set of declarations and initializations
-   * (as discuessed in 3.1.2.4). The inititalizers of objects that have automatic storage duration are evaluated and the values are stored in the objects in the order their
-   * declarators appear in the translation unit.
-   */
-
-  if (compoundStatement->declarationList) { verifyDeclarationList(compoundStatement->declarationList); }
-  if (compoundStatement->statementList) { verifyStatementList(compoundStatement->statementList); }
-}
-
-void verifyExpressionStatement(const g_ExpressionStatement* expressionStatement) {
-
-  /* # 3.6.3 Expression and Null Statements */
-  /* ## Semantics */
-  /* The expression in an expression statement is evaluated as a void expression for it side effects. (Footnote 75: )*/
-}
-
 //A.2.4 External Definitions
-void verifyTranslationUnit(const g_TranslationUnit* translationUnit) {
-
-  /* # 3.7 External Definitions */
-  /* ## Constraints */
-  /* The storage class specifiers `auto` and `register` shall not appear in the declaration specifiers in an external declaration. */
-  /* There shall be no more than one external definition for each identifier declared with internal linkage in a translation unit.
-   * Moreover, if an identifier declared with internal linkage is used in an expression (other than as a part of the operand of a 'sizeof' operator,
-   * there shall be exactly one external definition for the identifier in the translation unit.
-   *
-   * NON C STANDARD:
-   * 1. One file can't have two `static` storage allocating identifiers, i.e.
-   *    static int foo;
-   *    static float foo;
-   *    foo = 1; //valid, because foo only is allocating storage once statically
-   *
-   *    static int foo = 1;
-   *    static float foo = 1.0f; //invalid, because foo has two allocated storage space
-   * 2. Referenced `static` variables need to be initialized, i.e.
-   *    static int foo;
-   *    print(foo); //invalid, because foo isn't initialized, and `static` variables can be externally linked
-   *
-   *    static int foo;
-   *    sizeof(foo); //exception, because `sizeof()` doesn't need its address or value, just type
-   */
-
-   /* ## Semantics */
-   /* As discussed in 2.1.1.1, the unit of program text after preprocessing is a translation unit, which consists of a sequence of external declarations.
-    * These are described as "external" because they appear outside of any function (and hence have file scope). As discussed in 3.5, a declaration that
-    * also causess storage to be reserved for an object or function named by the identifier is a definition.
-    */
-   /* An *external definition* is an external declaration that is also a definition of a function or an object. If an identifier declared with 
-    * external linkage is used in an expression (other than as part of the operand of a `sizeof` operator), somewhere in the entire program there shall
-    * be exactly one external definition for the identifier; otherwise, there shall be no more than one. (Footnote 78: Thus if an identifier declared
-    * with external linkage is not used in an expression, there need be no external definition for it.)
-    */
-
-  verifyExternalDeclaration(translationUnit->externalDeclaration);
-}
-
-void verifyExternalDeclaration(const g_ExternalDeclaration* externalDeclaration) {
-
-  switch (externalDeclaration->type) {
-
-    case EXTERNAL_DECLARATION_DECLARATION: verifyDeclaration(externalDeclaration->declaration.declaration); break;
-    case EXTERNAL_DECLARATION_FUNCTION: verifyFunctionDefinition(externalDeclaration->function.functionDefinition); break;
-  }
-}
-
 void verifyFunctionDefinition(const g_FunctionDefinition* functionDefinition) {
 
   /* # 3.7.1 Function Definitions */
@@ -175,6 +237,54 @@ void verifyFunctionDefinition(const g_FunctionDefinition* functionDefinition) {
    *   //...// func() // or (*func)() ... //}
    * ```
    */
+}
+
+void verifyExternalDeclaration(const g_ExternalDeclaration* externalDeclaration) {
+
+  switch (externalDeclaration->type) {
+
+    case EXTERNAL_DECLARATION_DECLARATION: verifyDeclaration(externalDeclaration->declaration.declaration); break;
+    case EXTERNAL_DECLARATION_FUNCTION: verifyFunctionDefinition(externalDeclaration->function.functionDefinition); break;
+  }
+}
+
+void verifyTranslationUnit(const g_TranslationUnit* translationUnit) {
+
+  /* # 3.7 External Definitions */
+  /* ## Constraints */
+  /* The storage class specifiers `auto` and `register` shall not appear in the declaration specifiers in an external declaration. */
+  /* There shall be no more than one external definition for each identifier declared with internal linkage in a translation unit.
+   * Moreover, if an identifier declared with internal linkage is used in an expression (other than as a part of the operand of a 'sizeof' operator,
+   * there shall be exactly one external definition for the identifier in the translation unit.
+   *
+   * NON C STANDARD:
+   * 1. One file can't have two `static` storage allocating identifiers, i.e.
+   *    static int foo;
+   *    static float foo;
+   *    foo = 1; //valid, because foo only is allocating storage once statically
+   *
+   *    static int foo = 1;
+   *    static float foo = 1.0f; //invalid, because foo has two allocated storage space
+   * 2. Referenced `static` variables need to be initialized, i.e.
+   *    static int foo;
+   *    print(foo); //invalid, because foo isn't initialized, and `static` variables can be externally linked
+   *
+   *    static int foo;
+   *    sizeof(foo); //exception, because `sizeof()` doesn't need its address or value, just type
+   */
+
+   /* ## Semantics */
+   /* As discussed in 2.1.1.1, the unit of program text after preprocessing is a translation unit, which consists of a sequence of external declarations.
+    * These are described as "external" because they appear outside of any function (and hence have file scope). As discussed in 3.5, a declaration that
+    * also causess storage to be reserved for an object or function named by the identifier is a definition.
+    */
+   /* An *external definition* is an external declaration that is also a definition of a function or an object. If an identifier declared with 
+    * external linkage is used in an expression (other than as part of the operand of a `sizeof` operator), somewhere in the entire program there shall
+    * be exactly one external definition for the identifier; otherwise, there shall be no more than one. (Footnote 78: Thus if an identifier declared
+    * with external linkage is not used in an expression, there need be no external definition for it.)
+    */
+
+  verifyExternalDeclaration(translationUnit->externalDeclaration);
 }
 
 void semanticAnalysis(const g_TranslationUnit* translationUnit) {

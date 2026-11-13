@@ -35,7 +35,142 @@
  * is that of the expression.
  */
 /* The rest of this section deals with initializers for objects that have aggregate or union type*/
+/* An array of character type may be initialized by a character string literal, optionally enclosed in braces. Successive characters of
+ * the character string literal (including the terminating null character if there is room or if the array is of unknown size) initialize
+ * the elements of the array.
+ */
+/* An array with element type compatible with `wchar_t` may be initialized by a wide string literal, optionally enclosed in braces.
+ * Successive codes of the wide string literal (including the terminating zero-valued code if there is room or if the array is of unknown
+ * size) initialize the elements of the array.
+ */
+/* Otherwise, the initializer for an object that has aggregate type shall be a barce enclosed list of initializers for the members of the
+ * aggregate, written in increasing subscript or member order; and the initializer for an object that has union type shall be a brace-enclosed
+ * initializer for the first member of the union.
+ */
+/* If the aggregate contains members that are aggregates or unions, or if the first member of a union is an aggregate or union, the rules apply
+ * recursivley to the subaggregates or contained unions. If the initializer of a subaggregate or contained union begins with a left brace,
+ * the initializers enclosed by that brace and its matching right brace initialize the members of the subaggregate or the first member of the
+ * contained union. Otherwise, only enough initializers form the list are taken into account for the members of the subaggregate or the first
+ * member of the contained union; any remaining initializers are left to initialize the next member of the aggregate of which the current 
+ * subaggregate or contained union is a part.
+ */
+/* If there are fewer initializers in a brace-enclosed list than there are members of the aggregate, the remainder of the aggregate shall be
+ * initialized implicitly the same object that have static storage duration.
+ */
+/* If an array of unknown size if initialized, its size is determined by the number of initializers provided for its elements. At the end of
+ * its initializer list, the array no longer has incomplete type.
+ */
 
+/* ## Examples */
+/* The declaration
+ * ```
+ * int x[] = { 1, 3, 5 };
+ * ```
+ * defines and initializes `x` as a one-dimensional array object that has three elements, as no size was specified and there are three initializers.
+ */
+/* ```
+ * float y[4][3] = {
+ *  { 1, 3, 5 },
+ *  { 2, 4, 6 },
+ *  { 3, 5, 7 },
+ * };
+ * ```
+ * is a definition with a fully bracketed initialization: 1, 3, and 5 initialize the first row of `y` (the array object `y[0]`), namely `y[0][0]`,
+ * `y[0][1]`, and `y[0][2]`. Likewise the next two lines initialize `y[1]` and `y[2]`. The initializer ends early, so `y[3]` is initialized with zeros.
+ * Precisely the same effect could have been achieved by
+ * ```
+ * float y[4][3] = {
+ *  1, 3, 5, 2, 4, 6, 3, 5, 7
+ * };
+ * ```
+ * The initializer for `y[0]` does not begin with a left brace, so three items from the list are used. Likewise the next three are taken successively
+ * for `y[1]` and `y[2]`. Also
+ * ```
+ * float z[4][3] = {
+ *  { 1 } , { 2 }, { 3 }, { 4 }
+ * };
+ * initializes the first column of `z` as specified and initializes the rest with zeros.
+ */
+/* ```
+ * struct { int a[3], b; } w[] = { { 1 }, 2 };
+ * ```
+ * is a definition with an inconsistently bracketed initialization. It defines an array with two element structures: `w[0].a[0]` is 1 and `w[1].a[0]`
+ * is 2; all the other elements are zero.
+ */
+/* The declaration
+ * ```
+ * short q[4][3][2] = {
+ *  { 1 },
+ *  { 2, 3 },
+ *  { 4, 5, 6 }
+ * };
+ * ```
+ * contains an incompletely but consistently bracketed initialization. It defines a three dimensional array object: `q[0][0][0]` is 1, `q[1][0][0]` is 2,
+ * `q[1][0][1]` is 3, and 4, 5, and 6 initialize `q[2][0][0]`, respectively; all the rest are zero. The initializer for `q[0][0]` does not being with a left brace,
+ * so up to six items from the current list may be used. There is only one, so the values for the remaining five elements are initialized with zero.
+ * Likewise, the initializers for `q[1][0]` and `q[2][0]` do not begin with a left brace, so each uses up to six items, initializing their respective
+ * two-dimensional subaggregates. If there had been more than six items in any of the lists, a diagnostic message would have been issued. 
+ * The same initialization result could have been achieved by:
+ * ```
+ * short q[4][3][2] = {
+ *  1, 0, 0, 0, 0, 0, 0,
+ *  2, 3, 0, 0, 0, 0, 0,
+ *  4, 5, 6
+ * };
+ * ```
+ * or by:
+ * ```
+ * short q[4][3][2] = {
+ *  {
+ *    { 1 },
+ *  },
+ *  {
+ *    { 2, 3 },
+ *  },
+ *  {
+ *    { 4, 5 },
+ *    { 6 },
+ *  }
+ * };
+ * ```
+ * is a fully bracketed form.
+ */
+/* Note that the fully bracketed an minimally bracketed forms of initialization are, in general, less likely to cause confusion. */
+/* One form of initialization that completes array types involves typedef names. Given the declaration
+ * ```
+ * typedef int A[];
+ * ```
+ * the declaration
+ * ```
+ * A a = {1, 2}, b = {3, 4, 5};
+ * ```
+ * is identical to
+ * ```
+ * int a[] = {1, 2}, b[] = {3, 4, 5};
+ * ```
+ * due to the rules for incomplete types.
+ */
+/* Finally, the declaration
+ * ```
+ * char s[] = "abc", t[3] = "abc";
+ * ```
+ * defines "plain" `char` array objects `s` and `t` whose elements are initialized with character string literals. This delcaration is identical to
+ * ```
+ * char s[] = { 'a', 'b', 'c', '\0' },
+ *      t[] = { 'a', 'b', 'c' };
+ * ```
+ * The contents of the arrays are modifiable. On the other hand, the declaration
+ * ```
+ * char *p = "abc";
+ * ```
+ * defines `p` with type "pointer to `char`" that is initialized to point to an object with type "array of `char`" with length 4 whose elements
+ * are initialized with a character string literal. If an attempt is made to use `p`  to modify the contents of the array, the behavior is undefined.
+ */
+/* **Forward references:** common definitions `<stddef.h>` (4.1.5). */
+
+void verifyInitializer(const g_Initializer* initializer) {
+
+}
 void verifyInitializerList(const g_InitializerList* initializerList) {
 
 }

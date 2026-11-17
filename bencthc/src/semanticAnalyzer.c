@@ -168,11 +168,24 @@
  */
 /* **Forward references:** common definitions `<stddef.h>` (4.1.5). */
 
+void verifyInitializerList(const g_InitializerList* initializerList);
 void verifyInitializer(const g_Initializer* initializer) {
 
+  if (context->initializers < context->objectsToInitialize) { die("Too many objects for initialization"); }
+
+  if (initializer->type == INITIALIZER_ASSIGNMENT &&
+      initializer->type.binaryExpression->type == )
+
+  switch (initializer->type) {
+
+    case INITIALIZER_ASSIGNMENT : verifyAssignmentExpression(initializer->assignment.binaryExpression);
+    case INITIALIZER_INITIALIZER_LIST : verifyInitalizerList(initializer->initializerList.initializerList);
+  }
 }
 void verifyInitializerList(const g_InitializerList* initializerList) {
 
+  if (initializerList->initializerList) { veriifyInitializerList(initializerList->initializerList); }
+  else { verifyInitializer(initializerList->initializer); }
 }
 
 void verifyCompoundStatement(const g_CompoundStatement* compoundStatement);

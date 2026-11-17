@@ -174,7 +174,7 @@ void verifyInitializer(const g_Initializer* initializer) {
   if (context->initializers < context->objectsToInitialize) { die("Too many objects for initialization"); }
 
   if (initializer->type == INITIALIZER_ASSIGNMENT &&
-      initializer->type.binaryExpression->type == )
+      initializer->assignment.binaryExpression->type == )
 
   switch (initializer->type) {
 

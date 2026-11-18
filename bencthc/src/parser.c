@@ -6,6 +6,7 @@
 
 #include "utils/exit.h"
 #include "utils/allocator.h"
+#include "utils/iHateLibC.h"
 #include "utils/symbols.h"
 #include "utils/string.h"
 #include "structs.h"
@@ -52,13 +53,64 @@ Token* p_consume(const TokenType type, const char* err) {
   die(err);
 }
 
+Declaration* parseDeclaration(const Scanner* s) {
+
+  Declaration* curr = b_alloc(blindParserArena, sizeof(Declaration));
+
+  curr->typeSpecifier = p_consume(INT, "only integer declarations are supported");
+
+  curr->identifier = p_consume(IDENTIFIER, "expected identifier for declaration");
+
+  //there is an initializer
+  if (p_peek() == EQUALS) { curr->initializer = parseInitializer(s); }
+}
+
 Function* parseFunction(const Scanner* s) {
 
   Function* function = b_alloc(blindParserArena, sizeof(Function));
 
   function->returnType = p_consume(INT, "expected integer return type for function definition");
   function->identifier = p_consume(IDENTIFIER, "expected identifier after function return type");
-  //rest of function
+
+  //in C89 compound statements (the `{ ... }` part of a function) puts all declaration before any statements
+
+  //declarations
+  //only INT right now, but check for other types later
+  
+  Declaration* declarationHead = NULL;
+  Declaration* declarationTail = NULL;
+  while (p_peek() == INT) {
+
+    if (!declarationHead) {
+
+      declarationHead = parseDeclaration(s);
+      declarationTail = declarationHead;
+    }
+    else {
+
+      declarationTail->next = parseDeclaration(s);
+      declarationTail = declarationTail->next;
+    }
+  }
+  function->declarations = declarationHead;
+
+  //statements
+  Statement* statementHead = NULL;
+  Statement* statementTail = NULL;
+  while (p_peek() != RIGHT_BRACE) {
+
+    if (!statementHead) {
+
+      statementHead = parseStatement(const Scanner* s);
+      statementTail = statementHead;
+    }
+    else {
+
+      statementTail->next = parseStatement(s);
+      statementTail = statementTail->next;
+    }
+  }
+  function->statements = statementHead;
 }
 
 Source* parse(const Scanner* s) {

@@ -79,6 +79,7 @@ typedef struct {
   //token storage
   Token* tokens;
   size_t count;
+  size_t current;
 
   //source storage
   char* source;
@@ -104,14 +105,26 @@ static const Keyword keywords[] = {
   {"int", 3, INT},
 };
 
-typedef struct {
+//AST nodes
 
-  //from scanner
-  Token* tokens;
-  size_t count;
+typedef enum PrimaryExpressionType { PRIMARY_IDENTIFIER, PRIMARY_CONSTANT } PrimaryExpressionType;
+typedef struct PrimaryExpression {
 
-  //next token index
-  size_t current;
-} TokenStream;
+  PrimaryExpressionType type;
+  union {
+
+    struct identifier { char* identifier; } identifier;
+    struct constant { int constant; } constant;
+  };
+} PrimaryExpression;
+
+typedef struct MultiplicativeExpression {
+
+  PrimaryExpression* left;
+  TokenType operator;
+  MultiplicativeExpression* right;
+} MultiplicativeExpression;
+
+typedef struct 
 
 #endif //BENCTH_STRUCTS_H

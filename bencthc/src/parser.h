@@ -7,6 +7,6 @@
 
 #include "structs.h"
 
-g_TranslationUnit* parse(const Scanner* s);
+Source* parse(Scanner* s);
 
 #endif //BENCTH_PARSER_H

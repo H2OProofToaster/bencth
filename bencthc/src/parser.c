@@ -14,7 +14,6 @@
 //forward declarations
 static Arena* blindParserArena;
 static Scanner* scanner;
-static SymbolTable* symbolTable;
 
 //helpers for tokenstream
 Token* p_lookN(const size_t n) {
@@ -55,7 +54,7 @@ Token* p_consume(const TokenType type, const char* err) {
 
 int p_try(const TokenType type) {
 
-  if (p_peek(type)) { 
+  if (p_peek()->type == type) { 
     
     p_consume(type, ""); 
     return 1;
@@ -66,84 +65,85 @@ int p_try(const TokenType type) {
   }
 }
 
-PrimaryExpression* parsePrimaryExpression() {
+Expression* parsePrimaryExpression() {
 
   Token* token = p_advance();
-  PrimaryExpression* curr = b_alloc(blindParserArena, sizeof(PrimaryExpression));
+  Expression* curr = b_alloc(blindParserArena, sizeof(Expression));
 
   switch (token->type) {
 
     case IDENTIFIER :
 
-      curr->type = PRIMARY_IDENTIFIER;
+      curr->type = EXPRESSION_IDENTIFIER;
       curr->identifier.identifier = token->literal.b_string;
 
     case INTEGER :
 
-      curr->type = PRIMARY_CONSTANT;
+      curr->type = EXPRESSION_CONSTANT;
       curr->constant.constant = token->literal.b_integer;
+
+    default :
+
+      die("expected identifier or integer for primary expression");
   }
 
   return curr;
 }
 
-MultiplicativeExpression* parseMultiplicativeExpression() {
+Expression* parseMultiplicativeExpression() {
 
-  PrimaryExpression* left = parsePrimaryExpression();
+  Expression* accumulator = parsePrimaryExpression();
 
-  if (p_peek() == STAR || p_peek() == FORWARD_SLASH) {
+  while (p_peek()->type == STAR || p_peek()->type == FORWARD_SLASH) {
 
-    MultiplicativeExpression* curr = b_alloc(blindParserArena, sizeof(MultiplicativeExpression));
-    curr->left = left;
-    curr->operator = p_advance();
-    curr->right = parseMultiplicativeExpression();
-    return curr;
+    Expression* curr = b_alloc(blindParserArena, sizeof(Expression));
+    curr->type = EXPRESSION_BINARY;
+    curr->binary.left = accumulator;
+    curr->binary.operator = p_advance()->type;
+    curr->binary.right = parsePrimaryExpression();
+    accumulator = curr;
   }
-  else { 
 
-    MultiplicativeExpression* curr = b_alloc(blindParserArena, sizeof(MultiplicativeExpression));
-    curr->left = left;
-    return curr;
-  }
+  return accumulator;
 }
 
-AdditiveExpression* parseAdditiveExpression() {
+Expression* parseAdditiveExpression() {
 
-  MultiplicativeExpression* curr = parseMultiplicativeExpression();
+  Expression* accumulator = parseMultiplicativeExpression();
 
-  while (p_peek() == PLUS || p_peek() == MINUS) {
+  while (p_peek()->type == PLUS || p_peek()->type == MINUS) {
 
-    MultiplicativeExpression* temp = b_alloc(blindParserArena, sizeof(MultiplicativeExpression));
-    temp->left = curr;
-    temp->operator = p_advance();
-    temp->right = parseMultiplicativeExpression();
-    curr = temp;
+    Expression* curr = b_alloc(blindParserArena, sizeof(Expression));
+    curr->type = EXPRESSION_BINARY;
+    curr->binary.left = accumulator;
+    curr->binary.operator = p_advance()->type;
+    curr->binary.right = parseMultiplicativeExpression();
+    accumulator = curr;
   }
 
-  return curr;
+  return accumulator;
 }
 
-AssignmentExpression* parseAssignmentExpression() {
+Expression* parseAssignmentExpression() {
 
-  AdditiveExpression* curr = parseAdditiveExpression();
+  Expression* accumulator = parseAdditiveExpression();
 
-  while (p_peek() == EQUALS) {
+  while (p_peek()->type == EQUALS) {
 
-    AdditiveExpression* temp = b_alloc(blindParserArena, sizeof(AdditiveExpression));
-    temp->left = curr;
-    temp->operator = p_advance();
-    temp->right = parseAdditiveExpression();
-    curr = temp;
+    Expression* curr = b_alloc(blindParserArena, sizeof(Expression));
+    curr->type = EXPRESSION_BINARY;
+    curr->binary.left = accumulator;
+    curr->binary.operator = p_advance()->type;
+    curr->binary.right = parseAdditiveExpression();
+    accumulator = curr;
   }
 
-  return curr;
+  return accumulator;
 }
 
 Expression* parseExpression() {
 
-  AssignmentExpression* left = parseAssignmentExpression();
-
-  return left;
+  return parseAssignmentExpression();
 }
 
 Initializer* parseInitializer() {
@@ -165,6 +165,8 @@ Declaration* parseDeclaration() {
 
   //there is an initializer
   if (p_peek() == EQUALS) { curr->initializer = parseInitializer(); }
+
+  return curr;
 }
 
 Statement* parseStatement() {
@@ -178,10 +180,10 @@ Statement* parseStatement() {
     //check for empty expression
     if (p_try(SEMICOLON)) { 
       
-      curr->jumpStatement.expression = NULL; 
+      curr->jump.expression = NULL; 
       return curr; 
     }
-    curr->jumpStatement.expression = parseExpression();
+    curr->jump.expression = parseExpression();
     return curr;
   }
 
@@ -190,10 +192,10 @@ Statement* parseStatement() {
   //check for empty expression
   if (p_try(SEMICOLON)) {
 
-    curr->expressionStatement.expression = NULL;
+    curr->expression.expression = NULL;
     return curr;
   }
-  curr->expressionStatement.expression = parseExpression();
+  curr->expression.expression = parseExpression();
   return curr;
 }
 
@@ -211,7 +213,7 @@ Function* parseFunction() {
   
   Declaration* declarationHead = NULL;
   Declaration* declarationTail = NULL;
-  while (p_peek() == INT) {
+  while (p_peek()->type == INT) {
 
     if (!declarationHead) {
 
@@ -229,7 +231,7 @@ Function* parseFunction() {
   //statements
   Statement* statementHead = NULL;
   Statement* statementTail = NULL;
-  while (p_peek() != RIGHT_BRACE) {
+  while (p_peek()->type != RIGHT_BRACE) {
 
     if (!statementHead) {
 
@@ -243,15 +245,22 @@ Function* parseFunction() {
     }
   }
   function->statements = statementHead;
+
+  return function;
 }
 
-Source* parse() {
+Source* parse(Scanner* s) {
+  
+  //set up scanner
+  scanner = s;  
 
   //source can only begin with main function definition returning int
   if (p_peek()->type != INT) { die("main function does not return int"); }
-  if (p_peekNext()->type != IDENTIFIER) { die("source does not begin wit function definition"); }
+  if (p_peekNext()->type != IDENTIFIER) { die("source does not begin with function definition"); }
   if (b_strcmp(p_peekNext()->literal.b_string, "main") != 0) { die("source does not begin with definition for \"main\""); }
 
   Source* source = b_alloc(blindParserArena, sizeof(Source));
   source->main = parseFunction();
+
+  return source;
 }

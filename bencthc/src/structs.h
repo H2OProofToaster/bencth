@@ -107,24 +107,58 @@ static const Keyword keywords[] = {
 
 //AST nodes
 
-typedef enum PrimaryExpressionType { PRIMARY_IDENTIFIER, PRIMARY_CONSTANT } PrimaryExpressionType;
-typedef struct PrimaryExpression {
+typedef enum ExpressionType { EXPRESSION_BINARY, EXPRESSION_IDENTIFIER, EXPRESSION_CONSTANT } ExpressionType;
+typedef struct Expression {
 
-  PrimaryExpressionType type;
+  ExpressionType type;
   union {
 
+    struct binary { struct Expression* left; TokenType operator; struct Expression* right; } binary;
     struct identifier { char* identifier; } identifier;
     struct constant { int constant; } constant;
   };
-} PrimaryExpression;
+} Expression;
 
-typedef struct MultiplicativeExpression {
+typedef struct Initializer {
 
-  PrimaryExpression* left;
-  TokenType operator;
-  MultiplicativeExpression* right;
-} MultiplicativeExpression;
+  Expression* assignmentExpression;
+} Initializer;
 
-typedef struct 
+typedef struct Declaration {
+
+  Token* typeSpecifier;
+  Token* identifier;
+  Initializer* initializer;
+
+  //used to collapse declaration-list into a linked list 
+  struct Declaration* next;
+} Declaration;
+
+typedef enum StatementType { STATEMENT_EXPRESSION, STATEMENT_JUMP } StatementType;
+typedef struct Statement {
+
+  StatementType type;
+  union {
+
+    struct expression { Expression* expression; } expression;
+    struct jump { Keyword keyword; Expression* expression; } jump;
+  };
+
+  //used to collapse statement-list into a linked list
+  struct Statement* next;
+} Statement;
+
+typedef struct Function {
+
+  Token* returnType;
+  Token* identifier;
+  Declaration* declarations;
+  Statement* statements;
+} Function;
+
+typedef struct Source {
+
+  Function* main;
+} Source;
 
 #endif //BENCTH_STRUCTS_H

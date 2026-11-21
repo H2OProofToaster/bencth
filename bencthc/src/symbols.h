@@ -5,7 +5,7 @@
 #ifndef BENCTH_SYMBOLS_H
 #define BENCTH_SYMBOLS_H
 
-#include "../structs.h"
+#include "utils/allocator.h"
 
 //symbols for lookup, stored in a linked list
 typedef struct Symbol {

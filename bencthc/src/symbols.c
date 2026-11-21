@@ -2,10 +2,10 @@
 // Created by nick on 9/9/26.
 //
 
-#include "symbols.h"
-#include "allocator.h"
-#include "exit.h"
-#include "string.h"
+#include "utils/symbols.h"
+#include "utils/allocator.h"
+#include "utils/exit.h"
+#include "utils/string.h"
 
 static Arena* symbolArena = NULL;
 

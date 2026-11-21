@@ -14,6 +14,7 @@
 //forward declarations
 static Arena* blindParserArena;
 static Scanner* scanner;
+static SymbolTable* symbolTable;
 
 //helpers for tokenstream
 Token* p_lookN(const size_t n) {
@@ -65,7 +66,7 @@ int p_try(const TokenType type) {
   }
 }
 
-Expression* parsePrimaryExpression() {
+Expression* parsePrimaryExpression(Context* context) {
 
   Token* token = p_advance();
   Expression* curr = b_alloc(blindParserArena, sizeof(Expression));
@@ -73,6 +74,14 @@ Expression* parsePrimaryExpression() {
   switch (token->type) {
 
     case IDENTIFIER :
+
+      //check for inentifier redefinition, but allow current function shadowing
+      if (isDefined(symbolTable, token) &&
+          b_strcmp(context->currentFunction->identifier->literal.b_string, 
+                   token->literal.b_string) != 0) {
+          
+          die("redefinition of identifier");
+      }
 
       curr->type = EXPRESSION_IDENTIFIER;
       curr->identifier.identifier = token->literal.b_string;
